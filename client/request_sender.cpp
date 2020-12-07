@@ -126,6 +126,7 @@ std::string receive_http_message(BIO *bio)
 void send_http_request(BIO *bio, const std::string& line, const std::string& host)
 {
     std::string request = line + "\r\n";
+    request += "conTent-length: 10 \r\n";
     request += "Host: " + host + "\r\n";
     request += "\r\n";
 
@@ -209,7 +210,7 @@ int send_request(std::string chain_file, std::string route, std::string args)
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), "localhost");
 
     // Create GET header
-    std::string get_header = "GET " + route + "HTTP/1.1";
+    std::string get_header = "GET " + route + " HTTP/1.1";
 
     my::send_http_request(ssl_bio.get(), get_header, "localhost");
     std::string response = my::receive_http_message(ssl_bio.get());

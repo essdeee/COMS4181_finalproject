@@ -1,4 +1,4 @@
-#include "request-sender.cpp"
+#include "request_sender.cpp"
 #include "crypto_lib/aes.h"
 #include "crypto_lib/sha256.h"
 //#include "client_utils.h"
@@ -23,7 +23,7 @@ int main()
 
     // Establish TLS connection
     
-    send_request("ca-chain.cert.pem", "/", "");
+    send_request("ca-chain.cert.pem", "/getcert", "");
 
     // Send username and hashedPassword via TLS
     

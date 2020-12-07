@@ -7,6 +7,7 @@
 #include <string>
 #include <unistd.h>
 #include <vector>
+#include <iostream>
 #include "server_utils.h"
 
 #include <openssl/bio.h>
@@ -112,11 +113,13 @@ std::string receive_http_message(BIO *bio)
     for (const std::string& line : my::split_headers(headers)) {
         if (const char *colon = strchr(line.c_str(), ':')) {
             auto header_name = std::string(&line[0], colon);
-            if (header_name == "Content-Length") {
+            // TODO: Need to find a way to prevent someone from giving wrong content-length 
+            if (convert_to_lower(header_name) == "content-length") {
                 content_length = std::stoul(colon+1);
             }
         }
     }
+
     while (body.size() < content_length) {
         body += my::receive_some_data(bio);
     }

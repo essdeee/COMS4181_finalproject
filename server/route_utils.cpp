@@ -4,7 +4,80 @@
 #include <vector>
 #include <unistd.h>
 #include <sys/wait.h>
-#include "server_utils.h"
+#include "route_utils.h"
+
+// CONSTANTS AND MACROS
+extern const std::string VERIFY_PASS_PATH = "./../pass/bin/verify-pass";
+extern const std::string UPDATE_PASS_PATH = "./../pass/bin/update-pass";
+extern const std::string CERT_GEN_PATH = "./../client_certs/bin/cert-gen";
+extern const std::string FETCH_CERT_PATH = "./../client_certs/bin/fetch-cert";
+extern const std::string MAIL_OUT_PATH = "./../mail/bin/mail-out";
+extern const std::string MAIL_IN_PATH = "./../mail/bin/mail-in";
+
+int call_server_program(std::string program_name, std::vector<std::string> args)
+{
+    // Open up mail-out for each message we want to mailbox to send to
+    int status;
+    int pipe_fd[2];
+    pid_t p;
+
+    if (pipe(pipe_fd) == -1) 
+    {
+        std::cerr << "Pipe failed." << std::endl;
+        return 1;
+    }
+
+    p = fork();
+    if (p < 0) 
+    {
+        // Failed fork
+        std::cerr << "Fork failed." << std::endl;
+        return 1;
+    }
+    else if (p == 0)
+    {
+        // Child process
+        close(pipe_fd[0]);               // Close the reading end of the pipe
+        close(pipe_fd[1]);               // Close the writing end of the pipe
+        close(STDIN_FILENO);             // Close the current stdin 
+        dup2(pipe_fd[0], STDIN_FILENO);  // Replace stdin with the reading end of the pipe
+        
+        // Branch for each of the possible execl server programs
+        if ( program_name == "verify-pass")
+        {
+            execl(VERIFY_PASS_PATH.c_str(), VERIFY_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
+        }
+        else if ( program_name == "update-pass" )
+        {
+            execl(UPDATE_PASS_PATH.c_str(), UPDATE_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
+        }
+        else if ( program_name == "cert-gen" )
+        {
+            execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str(), args[1].c_str());
+        }
+        else if ( program_name == "fetch-cert" )
+        {
+            execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), args[1].c_str());
+        }
+        else if ( program_name == "mail-out" )
+        {
+            execl(MAIL_OUT_PATH.c_str(), MAIL_OUT_PATH.c_str(), args[0].c_str());
+        }
+        else if ( program_name == "mail-in" )
+        {
+            execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), args[1].c_str());
+        }
+    } 
+    else 
+    {
+        // Parent process
+        close(pipe_fd[0]); // Close the reading end of the pipe
+        close(pipe_fd[1]); // Close the writing end of the pipe
+        p = wait(&status);
+    }
+
+    return status;
+}
 
 std::string get_cert_route(int content_length, std::string request_body)
 {
@@ -18,7 +91,7 @@ std::string get_cert_route(int content_length, std::string request_body)
     if (call_server_program("verify-pass", verify_pass_args))
     {
         // TODO: Write public key to file (?) so cert-gen can get it through stdin?
-        // Passing a public key throguh command line arg seems very janky...
+        // Passing a public key through command line arg seems very janky...
 
         std::string username;
         std::vector<std::string> cert_gen_args {username};
@@ -81,7 +154,6 @@ std::string change_pw_route(int content_length, std::string request_body)
     // TODO: Write public key to file (?) so cert-gen can get it through stdin?
     // Passing a public key throguh command line arg seems very janky...
 
-    std::string username;
     std::vector<std::string> cert_gen_args {username};
     if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
     {
@@ -187,69 +259,4 @@ std::string recvmsg_route(int content_length, std::string request_body)
     }
 
     return response;
-}
-
-int call_server_program(std::string program_name, std::vector<std::string> args)
-{
-    // Open up mail-out for each message we want to mailbox to send to
-    int status;
-    int pipe_fd[2];
-    pid_t p;
-
-    if (pipe(pipe_fd) == -1) 
-    {
-        std::cerr << "Pipe failed." << std::endl;
-        return 1;
-    }
-
-    p = fork();
-    if (p < 0) 
-    {
-        // Failed fork
-        std::cerr << "Fork failed." << std::endl;
-        return 1;
-    }
-    else if (p == 0)
-    {
-        // Child process
-        close(pipe_fd[0]);               // Close the reading end of the pipe
-        close(pipe_fd[1]);               // Close the writing end of the pipe
-        close(STDIN_FILENO);             // Close the current stdin 
-        dup2(pipe_fd[0], STDIN_FILENO);  // Replace stdin with the reading end of the pipe
-        
-        // Branch for each of the possible execl server programs
-        if ( program_name == "verify-pass")
-        {
-            execl(VERIFY_PASS_PATH.c_str(), VERIFY_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
-        }
-        else if ( program_name == "update-pass" )
-        {
-            execl(UPDATE_PASS_PATH.c_str(), UPDATE_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
-        }
-        else if ( program_name == "cert-gen" )
-        {
-            execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str(), args[1].c_str());
-        }
-        else if ( program_name == "fetch-cert" )
-        {
-            execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), args[1].c_str());
-        }
-        else if ( program_name == "mail-out" )
-        {
-            execl(MAIL_OUT_PATH.c_str(), MAIL_OUT_PATH.c_str(), args[0].c_str());
-        }
-        else if ( program_name == "mail-in" )
-        {
-            execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), args[1].c_str());
-        }
-    } 
-    else 
-    {
-        // Parent process
-        close(pipe_fd[0]); // Close the reading end of the pipe
-        close(pipe_fd[1]); // Close the writing end of the pipe
-        p = wait(&status);
-    }
-
-    return status;
 }

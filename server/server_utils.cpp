@@ -4,6 +4,7 @@
 #include <vector>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <bits/stdc++.h> 
 #include "server_utils.h"
 #include "route_utils.h"
 
@@ -18,6 +19,17 @@ std::vector<std::string> split(std::string str,std::string sep)
         current=strtok(NULL,sep.c_str());
     }
     return arr;
+}
+
+std::string convert_to_lower(const std::string str)
+{
+    std::string converted_str;
+    for(char c : str)
+    {
+        converted_str.push_back(std::tolower(c));
+    }
+
+    return converted_str;
 }
 
 std::string route(const std::string request)
@@ -66,8 +78,8 @@ std::string route(const std::string request)
     }
     else
     {
-        std::cerr << "Route not accepted.";
-        response = "Invalid route specified in HTTPS request.";
+        std::cerr << "ERROR: Route not accepted.\n";
+        response = "Invalid route specified in HTTPS request.\n";
     }
 
     return response;
