@@ -4,6 +4,7 @@
 #include <memory.h>
 #include <string>
 
+/*
 void iterate_sha256(std::string password, BYTE* final_hash, int rounds)
 {
     // Convert password into BYTE array of chars
@@ -40,3 +41,4 @@ void iterate_sha256(std::string password, BYTE* final_hash, int rounds)
         final_hash[i] = buf[i];
     }
 }
+*/

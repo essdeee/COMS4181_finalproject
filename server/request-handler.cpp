@@ -7,6 +7,7 @@
 #include <string>
 #include <unistd.h>
 #include <vector>
+#include "server_utils.h"
 
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -177,9 +178,13 @@ int main()
             ;
         try {
             std::string request = my::receive_http_message(bio.get());
+
+            // Do the route function
+            std::string http_response = route(request);
+
             printf("Got request:\n");
             printf("%s\n", request.c_str());
-            my::send_http_response(bio.get(), "okay cool\n");
+            my::send_http_response(bio.get(), http_response.c_str()); // Implement two of these (one for invalid 400 case)
         } catch (const std::exception& ex) {
             printf("Worker exited with exception:\n%s\n", ex.what());
         }

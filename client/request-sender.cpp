@@ -171,7 +171,7 @@ void verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
 
 } // namespace my
 
-int main()
+int send_request(std::string chain_file, std::string route, std::string args)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_library_init();
@@ -185,7 +185,7 @@ int main()
 #else
     auto ctx = my::UniquePtr<SSL_CTX>(SSL_CTX_new(TLS_client_method()));
 #endif
-    if (SSL_CTX_load_verify_locations(ctx.get(), "ca-chain.cert.pem", nullptr) != 1) {
+    if (SSL_CTX_load_verify_locations(ctx.get(), chain_file.c_str(), nullptr) != 1) {
         my::print_errors_and_exit("Error setting up trust store");
     }
 
@@ -208,7 +208,12 @@ int main()
     }
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), "localhost");
 
-    my::send_http_request(ssl_bio.get(), "GET / HTTP/1.1", "localhost");
+    // Create GET header
+    std::string get_header = "GET " + route + "HTTP/1.1";
+
+    my::send_http_request(ssl_bio.get(), get_header, "localhost");
     std::string response = my::receive_http_message(ssl_bio.get());
     printf("%s", response.c_str());
+
+    return 0;
 }
