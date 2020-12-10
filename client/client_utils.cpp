@@ -1,10 +1,40 @@
 #include "client_utils.h"
-#include "crypto_lib/sha256.h"
-#include "crypto_lib/aes.h"
 #include <memory.h>
 #include <string>
 
+bool simpleSHA512(std::string password, BYTE* buffer)
+{
+    // Convert password into BYTE array of chars 
+    // NOTE: Null-terminating character is NOT hashed.
+    BYTE password_bytes[password.length()];
+    for(int i = 0; i < password.length(); i++)
+    {
+        password_bytes[i] = password[i];
+    }
+
+    SHA512_CTX context;
+    if(!SHA512_Init(&context))
+        return false;
+
+    if(!SHA512_Update(&context, password_bytes, password.length()))
+        return false;
+
+    if(!SHA512_Final(buffer, &context))
+        return false;
+
+    return true;
+}
+
+void print_hex(const BYTE* byte_arr, int len)
+{
+    for(int i = 0; i < len; i++)
+    {
+        printf("%.2X", byte_arr[i]);
+    }
+}
+
 /*
+NOTE: THIS HASHES THE NULL-TERMINATING CHARACTER
 void iterate_sha256(std::string password, BYTE* final_hash, int rounds)
 {
     // Convert password into BYTE array of chars

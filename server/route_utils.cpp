@@ -87,7 +87,7 @@ std::string get_cert_route(int content_length, std::string request_body)
     std::string username;
     std::string password;
     std::vector<std::string> verify_pass_args {username, password};
-
+ 
     if (call_server_program("verify-pass", verify_pass_args))
     {
         // TODO: Write public key to file (?) so cert-gen can get it through stdin?
@@ -103,14 +103,14 @@ std::string get_cert_route(int content_length, std::string request_body)
         }
         else
         {
-            std::cerr << "Certificate generation failed on server end. cert-gen failed.";
-            response = "Certificate generation failed (cert-gen failed).";
+            std::cerr << "Certificate generation failed on server end. cert-gen failed.\n";
+            response = "Certificate generation failed (cert-gen failed).\n";
         }
     }
     else
     {
-        std::cerr << "Client specified invalid username/password. verify-pass failed.";
-        response = "Invalid username/password (verify-pass failed).";
+        std::cerr << "Client specified invalid username/password. verify-pass failed.\n";
+        response = "Invalid username/password (verify-pass failed).\n";
     }
 
     return response;

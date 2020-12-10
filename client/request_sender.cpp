@@ -13,6 +13,8 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+#include "http_utils.h"
+
 namespace my {
 
 template<class T> struct DeleterOf;
@@ -126,7 +128,6 @@ std::string receive_http_message(BIO *bio)
 void send_http_request(BIO *bio, const std::string& line, const std::string& host)
 {
     std::string request = line + "\r\n";
-    request += "conTent-length: 10 \r\n";
     request += "Host: " + host + "\r\n";
     request += "\r\n";
 
@@ -172,7 +173,7 @@ void verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
 
 } // namespace my
 
-int send_request(std::string chain_file, std::string route, std::string args)
+int send_request(std::string chain_file, HTTPrequest request)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_library_init();
@@ -210,7 +211,8 @@ int send_request(std::string chain_file, std::string route, std::string args)
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), "localhost");
 
     // Create GET header
-    std::string get_header = "GET " + route + " HTTP/1.1";
+    // std::string get_header = "GET " + route + " HTTP/1.0";
+    std::string get_header = request.command_line;
 
     my::send_http_request(ssl_bio.get(), get_header, "localhost");
     std::string response = my::receive_http_message(ssl_bio.get());

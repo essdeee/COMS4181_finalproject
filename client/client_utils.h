@@ -1,12 +1,17 @@
 #ifndef CLIENT_UTILS_H
 #define CLIENT_UTILS_H
 #include <string>
-#include "crypto_lib/aes.h"
-#include "crypto_lib/sha256.h"
+#include <openssl/sha.h>
 
-#define HMAC_SHA256_ITERS 10000
-#define ENCRYPT_SHA256_ITERS 20000 
+/**************************** CONSTANTS ******************************/
+#define USERNAME_MAX 255
 
-void iterate_sha256(std::string password, BYTE* final_hash, int rounds);
+/**************************** DATA TYPES ****************************/
+typedef unsigned char BYTE;            // 8-bit byte
+
+/**************************** FUNCTION DECLARATIONS *****************/
+// void iterate_sha256(std::string password, BYTE* final_hash, int rounds);
+bool simpleSHA512(std::string password, BYTE* md);
+void print_hex(const BYTE* byte_arr, int len);
 
 #endif
