@@ -54,27 +54,27 @@ std::string route(const std::string request)
     if(route == "/getcert")
     {
         response = get_cert_route(content_length, request_body);
-        response = "/getcert";
+        response = "/getcert\n";
     }
     else if(route == "/changepw")
     {
         response = change_pw_route(content_length, request_body);
-        response = "/changepw";
+        response = "/changepw\n";
     }
     else if(route == "/sendmsg-encrypt")
     {
         response = sendmsg_encrypt_route(content_length, request_body);
-        response = "/sendmsg-encrypt";
+        response = "/sendmsg-encrypt\n";
     }
     else if(route == "/sendmsg-message")
     {
         response = sendmsg_message_route(content_length, request_body);
-        response = "/sendmsg-message";
+        response = "/sendmsg-message\n";
     }
     else if(route == "/recvmsg")
     {
         response = recvmsg_route(content_length, request_body);
-        response = "/recvmsg";
+        response = "/recvmsg\n";
     }
     else
     {

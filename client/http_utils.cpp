@@ -11,7 +11,10 @@ const std::string RECVMSG_ROUTE = "/recvmsg";
 HTTPrequest getcert_request(std::string username, std::string password, BYTE* csr)
 {
     HTTPrequest request;
-    request.command_line = "GET " + GETCERT_ROUTE + " HTTP/1.0"; // Change to POST 
+    request.command_line = "POST " + GETCERT_ROUTE + " HTTP/1.0"; // Change to POST 
+    request.body = username + "\n";
+    request.body += password + "\n";
+    request.content_length = std::to_string(request.body.length());
 
     return request;
 }

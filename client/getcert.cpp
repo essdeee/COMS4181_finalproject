@@ -38,7 +38,7 @@ int main()
     // Establish TLS connection
 
     // send_request("ca-chain.cert.pem", "/getcert", "");
-    // send_request("ca-chain.cert.pem", request);
+    send_request("ca-chain.cert.pem", request);
     
     // Receive server response
 

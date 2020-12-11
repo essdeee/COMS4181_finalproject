@@ -125,12 +125,18 @@ std::string receive_http_message(BIO *bio)
     return headers + "\r\n" + body;
 }
 
-void send_http_request(BIO *bio, const std::string& line, const std::string& host)
+void send_http_request(BIO *bio, const HTTPrequest request_obj, const std::string& host)
 {
-    std::string request = line + "\r\n";
+    // Header
+    std::string request = request_obj.command_line + "\r\n";
     request += "Host: " + host + "\r\n";
+    request += "Content-Length: " + request_obj.content_length + "\r\n";
     request += "\r\n";
 
+    // Body
+    request += request_obj.body;
+
+    std::cout << request << std::endl;
     BIO_write(bio, request.data(), request.size());
     BIO_flush(bio);
 }
@@ -210,11 +216,9 @@ int send_request(std::string chain_file, HTTPrequest request)
     }
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), "localhost");
 
-    // Create GET header
     // std::string get_header = "GET " + route + " HTTP/1.0";
-    std::string get_header = request.command_line;
 
-    my::send_http_request(ssl_bio.get(), get_header, "localhost");
+    my::send_http_request(ssl_bio.get(), request, "localhost");
     std::string response = my::receive_http_message(ssl_bio.get());
     printf("%s", response.c_str());
 

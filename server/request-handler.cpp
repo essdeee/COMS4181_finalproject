@@ -101,21 +101,28 @@ std::vector<std::string> split_headers(const std::string& text)
 
 std::string receive_http_message(BIO *bio)
 {
+    std::cout << "HIHIHIHI" << std::endl;
     std::string headers = my::receive_some_data(bio);
+    // std::cout << headers << std::endl;
     char *end_of_headers = strstr(&headers[0], "\r\n\r\n");
     while (end_of_headers == nullptr) {
         headers += my::receive_some_data(bio);
         end_of_headers = strstr(&headers[0], "\r\n\r\n");
     }
     std::string body = std::string(end_of_headers+4, &headers[headers.size()]);
+    std::cout << body << std::endl;
+    // std::cout << headers << std::endl;
     headers.resize(end_of_headers+2 - &headers[0]);
+    // std::cout << headers << std::endl;
     size_t content_length = 0;
     for (const std::string& line : my::split_headers(headers)) {
+        // std::cout << line << std::endl;
         if (const char *colon = strchr(line.c_str(), ':')) {
             auto header_name = std::string(&line[0], colon);
-            // TODO: Need to find a way to prevent someone from giving wrong content-length 
+            // TODO: Make sure string parsing here is exactly as in the SIMPLE HTTP REQUEST doc 
             if (convert_to_lower(header_name) == "content-length") {
                 content_length = std::stoul(colon+1);
+                std::cout << content_length << std::endl;
             }
         }
     }
@@ -187,7 +194,7 @@ int main()
 
             printf("Got request:\n");
             printf("%s\n", request.c_str());
-            my::send_http_response(bio.get(), http_response.c_str()); // Implement two of these (one for invalid 400 case)
+            my::send_http_response(bio.get(), http_response.c_str()); // TODO: only handles one POST request, doesn't client hangs on more than one
         } catch (const std::exception& ex) {
             printf("Worker exited with exception:\n%s\n", ex.what());
         }
