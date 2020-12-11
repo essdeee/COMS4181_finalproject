@@ -2,6 +2,14 @@
 #define HTTP_UTILS_H
 #include "client_utils.h"
 
+/**************************** CONSTANTS ******************************/
+extern const std::string GETCERT_ROUTE;
+extern const std::string CHANGEPW_ROUTE;
+extern const std::string SENDMSG_ENCRYPT_ROUTE;
+extern const std::string SENDMSG_MESSAGE_ROUTE;
+extern const std::string RECVMSG_ROUTE;
+
+/**************************** OBJECTS *******************************/
 struct HTTPrequest
 {
     std::string command_line;    // <verb> <url> <version>
@@ -9,8 +17,9 @@ struct HTTPrequest
     std::string body;           // body that goes after the newline
 };
 
-HTTPrequest getcert_request(std::string username, BYTE* password, BYTE* csr);
-HTTPrequest changepw_request(std::string username, BYTE* old_pass, BYTE* new_pass, BYTE* csr);
+/**************************** FUNCTION DECLARATIONS *****************/
+HTTPrequest getcert_request(std::string username, std::string password, BYTE* csr);
+HTTPrequest changepw_request(std::string username, std::string old_pass, std::string new_pass, BYTE* csr);
 HTTPrequest sendmsg_encrypt_request(std::string recipient, BYTE* cert);
 HTTPrequest sendmsg_message_request(std::string recipient, BYTE* msg);
 HTTPrequest recvmsg_request(BYTE* cert);
