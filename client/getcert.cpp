@@ -29,8 +29,7 @@ int main()
     */
 
     // Get CSR
-    // TODO: Francis
-    BYTE csr[1024]; // Placeholder
+    BYTE* csr = gen_csr(username);
 
     // Generate HTTP request
     HTTPrequest request = getcert_request(username, password, csr);
