@@ -10,43 +10,14 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 
-std::string generateSalt() 
-{
-    const char alphanum[] =
-    "./0123456789ABCDEFGHIJKLMNOPQRST"
-    "UVWXYZabcdefghijklmnopqrstuvwxyz"; //salt alphanum
-
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-    std::uniform_int_distribution<> dis(0, sizeof(alphanum)-1); //Uniform distribution on an interval
-    char salt[17];          // 16 useful characters in salt (as in original code)
-    salt[0] = '$';          // $6$ encodes for SHA512 hash
-    salt[1] = '6';
-    salt[2] = '$';
-    for(int i = 3; i < 16; i++) 
-    {
-        salt[i] = alphanum[dis(gen)];
-    }
-    salt[16] = '\0';
-    return std::string(salt);
-}
-
-std::string hashPassword(std::string password)
-{
-    std::string salt = generateSalt();
-    std::string hash = crypt(password.c_str(), salt.c_str());
-    return hash;
-}
-
 void print_hex(const BYTE* byte_arr, int len)
 {
     for(int i = 0; i < len; i++)
     {
         printf("%.2X", byte_arr[i]);
     }
+    printf("\n");
 }
-
-
 
 //CSR Generation start
 
@@ -61,7 +32,7 @@ void csr_to_pem(X509_REQ *csr, uint8_t **csr_bytes, size_t *csr_size)
 	BIO_free_all(bio);
 }
 
-uint8_t* gen_csr(std::string client_name)
+std::vector<BYTE> gen_csr(std::string client_name)
 {
     int             ret = 0;
     RSA             *r = NULL;
@@ -84,6 +55,7 @@ uint8_t* gen_csr(std::string client_name)
     //printf("%s\n", (const unsigned char*)szCommon);
     const char      *szPath = "csr-1.pem";
 
+    std::vector<BYTE> csr_bytes_vec;
     uint8_t* csr_bytes = NULL;
     size_t csr_size = 0;
 
@@ -145,6 +117,10 @@ uint8_t* gen_csr(std::string client_name)
 
     /* Convert csr to PEM format. */
     csr_to_pem(x509_req, &csr_bytes, &csr_size);
+    for(int i = 0; i < csr_size; i++)
+    {
+        csr_bytes_vec.push_back(csr_bytes[i]);
+    }
 
     //out = BIO_new_file(szPath,"w");
     //ret = PEM_write_bio_X509_REQ(out, x509_req);
@@ -157,14 +133,14 @@ free_all:
     EVP_PKEY_free(pKey);
     BN_free(bne);
    
-    return csr_bytes; 
+    return csr_bytes_vec; 
 }
 
 //CSR Generation end
 
 //Certificate Saving start
 
-void save_cert(std::string cert_str)
+int save_cert(std::string cert_str)
 {
     std::vector<uint8_t> certBytes = base64_decode(cert_str);
     uint8_t *cert_data = certBytes.data();
@@ -181,6 +157,7 @@ void save_cert(std::string cert_str)
     const char *cPath = "client.pem";
     out = BIO_new_file(cPath, "w");
     int ret = PEM_write_bio_X509(out, cert);
+    return ret;
 }
 
 //Certificate Saving end

@@ -5,6 +5,8 @@
 #include <string>
 #include <stdio.h>
 #include <iostream>
+#include <vector>
+#include "base64.h"
 
 int main(int argc, char* argv[])
 {
@@ -26,8 +28,8 @@ int main(int argc, char* argv[])
     }
 
     // Get CSR
-    uint8_t* csr = gen_csr(username);
-
+    std::vector<BYTE> csr = gen_csr(username);
+    
     // Generate HTTP request
     HTTPrequest request = getcert_request(username, password, csr);
 
@@ -36,7 +38,10 @@ int main(int argc, char* argv[])
     
     // Write cert (from server response) to file
     std::string certstr = getcert_response(response);
-    save_cert(certstr);
+    if(save_cert(certstr) == 1)
+    {
+        std::cerr << "Could not successfully save certificate.\n";
+    }
     
     return 0;
 }

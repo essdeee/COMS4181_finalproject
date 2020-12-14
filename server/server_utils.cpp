@@ -8,6 +8,34 @@
 #include "server_utils.h"
 #include "route_utils.h"
 
+std::string generateSalt() 
+{
+    const char alphanum[] =
+    "./0123456789ABCDEFGHIJKLMNOPQRST"
+    "UVWXYZabcdefghijklmnopqrstuvwxyz"; //salt alphanum
+
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<> dis(0, sizeof(alphanum)-1); //Uniform distribution on an interval
+    char salt[17];          // 16 useful characters in salt (as in original code)
+    salt[0] = '$';          // $6$ encodes for SHA512 hash
+    salt[1] = '6';
+    salt[2] = '$';
+    for(int i = 3; i < 16; i++) 
+    {
+        salt[i] = alphanum[dis(gen)];
+    }
+    salt[16] = '\0';
+    return std::string(salt);
+}
+
+std::string hashPassword(std::string password)
+{
+    std::string salt = generateSalt();
+    std::string hash = crypt(password.c_str(), salt.c_str());
+    return hash;
+}
+
 std::vector<std::string> split(std::string str,std::string sep)
 {
     char* cstr=const_cast<char*>(str.c_str());
@@ -53,12 +81,12 @@ std::string route(const std::string request)
     // Execute the program
     if(route == GETCERT_ROUTE)
     {
-        response = get_cert_route(content_length, request_body);
+        response = getcert_route(content_length, request_body);
         response = GETCERT_ROUTE + "\n";
     }
     else if(route == CHANGEPW_ROUTE)
     {
-        response = change_pw_route(content_length, request_body);
+        response = changepw_route(content_length, request_body);
         response = CHANGEPW_ROUTE + "\n";
     }
     else if(route == SENDMSG_ENCRYPT_ROUTE)

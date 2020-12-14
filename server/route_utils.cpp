@@ -51,6 +51,8 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         // Branch for each of the possible execl server programs
         if ( program_name == "verify-pass")
         {
+            // arg[0] = username
+            // arg[1] = password
             execl(VERIFY_PASS_PATH.c_str(), VERIFY_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
         }
         else if ( program_name == "update-pass" )
@@ -59,7 +61,8 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         }
         else if ( program_name == "cert-gen" )
         {
-            execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str(), args[1].c_str());
+            // arg[0] = csr string
+            execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str());
         }
         else if ( program_name == "fetch-cert" )
         {
@@ -85,22 +88,19 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
     return status;
 }
 
-std::string get_cert_route(int content_length, std::string request_body)
+std::string getcert_route(int content_length, std::string request_body)
 {
     std::string response;
 
     // TODO: Parse out the username and password from request
     std::string username;
     std::string password;
+    std::string csr_string;
     std::vector<std::string> verify_pass_args {username, password};
  
     if (call_server_program("verify-pass", verify_pass_args))
     {
-        // TODO: Write public key to file (?) so cert-gen can get it through stdin?
-        // Passing a public key through command line arg seems very janky...
-
-        std::string username;
-        std::vector<std::string> cert_gen_args {username};
+        std::vector<std::string> cert_gen_args {csr_string};
         if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
         {
             // TODO: Read newly created cert from tmp file
@@ -122,7 +122,7 @@ std::string get_cert_route(int content_length, std::string request_body)
     return response;
 }
 
-std::string change_pw_route(int content_length, std::string request_body)
+std::string changepw_route(int content_length, std::string request_body)
 {
     std::string response;
 
@@ -130,12 +130,13 @@ std::string change_pw_route(int content_length, std::string request_body)
     std::string username;
     std::string old_password;
     std::string new_password;
+    std::string csr_string;
     std::vector<std::string> verify_pass_args {username, old_password};
 
     if (call_server_program("verify-pass", verify_pass_args) != 0)
     {
-        std::cerr << "Client specified invalid username/password. verify-pass failed.";
-        response = "Invalid username/password (verify-pass failed).";
+        std::cerr << "Client specified invalid username/password. verify-pass failed.\n";
+        response = "Invalid username/password (verify-pass failed).\n";
         return response;
     }
     
@@ -143,8 +144,8 @@ std::string change_pw_route(int content_length, std::string request_body)
 
     if (call_server_program("mail-out", mail_out_args) != 0)
     {
-        std::cerr << "Message not found. mail-pass failed.";
-        response = "Message not found. (mail-out failed).";
+        std::cerr << "Message not found. mail-pass failed.\n";
+        response = "Message not found. (mail-out failed).\n";
         return response;
     }
     
@@ -152,15 +153,15 @@ std::string change_pw_route(int content_length, std::string request_body)
 
     if (call_server_program("update-pass", update_pass_args) != 0)
     {
-        std::cerr << "Password could not be updated. update-pass failed.";
-        response = "Password could not be updated. (update-pass failed).";
+        std::cerr << "Password could not be updated. update-pass failed.\n";
+        response = "Password could not be updated. (update-pass failed).\n";
         return response;
     }
 
     // TODO: Write public key to file (?) so cert-gen can get it through stdin?
     // Passing a public key throguh command line arg seems very janky...
 
-    std::vector<std::string> cert_gen_args {username};
+    std::vector<std::string> cert_gen_args {csr_string};
     if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
     {
         // TODO: Read newly created cert from tmp file
@@ -169,8 +170,8 @@ std::string change_pw_route(int content_length, std::string request_body)
     }
     else
     {
-        std::cerr << "Certificate generation failed on server end. cert-gen failed.";
-        response = "Certificate generation failed (cert-gen failed).";
+        std::cerr << "Certificate generation failed on server end. cert-gen failed.\n";
+        response = "Certificate generation failed (cert-gen failed).\n";
     }
 
     return response;

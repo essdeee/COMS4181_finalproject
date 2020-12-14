@@ -17,8 +17,8 @@ extern const std::string SENDMSG_MESSAGE_ROUTE;
 extern const std::string RECVMSG_ROUTE;
 
 /**************************** FUNCTION DECLARATIONS *****************/
-std::string get_cert_route(int content_length, std::string request_body);
-std::string change_pw_route(int content_length, std::string request_body);
+std::string getcert_route(int content_length, std::string request_body);
+std::string changepw_route(int content_length, std::string request_body);
 std::string sendmsg_encrypt_route(int content_length, std::string request_body);
 std::string sendmsg_message_route(int content_length, std::string request_body);
 std::string recvmsg_route(int content_length, std::string request_body);
