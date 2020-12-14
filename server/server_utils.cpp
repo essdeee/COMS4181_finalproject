@@ -51,30 +51,30 @@ std::string route(const std::string request)
     std::string request_body;
 
     // Execute the program
-    if(route == "/getcert")
+    if(route == GETCERT_ROUTE)
     {
         response = get_cert_route(content_length, request_body);
-        response = "/getcert\n";
+        response = GETCERT_ROUTE + "\n";
     }
-    else if(route == "/changepw")
+    else if(route == CHANGEPW_ROUTE)
     {
         response = change_pw_route(content_length, request_body);
-        response = "/changepw\n";
+        response = CHANGEPW_ROUTE + "\n";
     }
-    else if(route == "/sendmsg-encrypt")
+    else if(route == SENDMSG_ENCRYPT_ROUTE)
     {
         response = sendmsg_encrypt_route(content_length, request_body);
-        response = "/sendmsg-encrypt\n";
+        response = SENDMSG_ENCRYPT_ROUTE + "\n";
     }
-    else if(route == "/sendmsg-message")
+    else if(route == SENDMSG_MESSAGE_ROUTE)
     {
         response = sendmsg_message_route(content_length, request_body);
-        response = "/sendmsg-message\n";
+        response = SENDMSG_MESSAGE_ROUTE + "\n";
     }
-    else if(route == "/recvmsg")
+    else if(route == RECVMSG_ROUTE)
     {
         response = recvmsg_route(content_length, request_body);
-        response = "/recvmsg\n";
+        response = RECVMSG_ROUTE + "\n";
     }
     else
     {

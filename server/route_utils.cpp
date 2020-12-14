@@ -7,12 +7,18 @@
 #include "route_utils.h"
 
 // CONSTANTS AND MACROS
-extern const std::string VERIFY_PASS_PATH = "./../pass/bin/verify-pass";
-extern const std::string UPDATE_PASS_PATH = "./../pass/bin/update-pass";
-extern const std::string CERT_GEN_PATH = "./../client_certs/bin/cert-gen";
-extern const std::string FETCH_CERT_PATH = "./../client_certs/bin/fetch-cert";
-extern const std::string MAIL_OUT_PATH = "./../mail/bin/mail-out";
-extern const std::string MAIL_IN_PATH = "./../mail/bin/mail-in";
+const std::string VERIFY_PASS_PATH = "./../pass/bin/verify-pass";
+const std::string UPDATE_PASS_PATH = "./../pass/bin/update-pass";
+const std::string CERT_GEN_PATH = "./../client_certs/bin/cert-gen";
+const std::string FETCH_CERT_PATH = "./../client_certs/bin/fetch-cert";
+const std::string MAIL_OUT_PATH = "./../mail/bin/mail-out";
+const std::string MAIL_IN_PATH = "./../mail/bin/mail-in";
+
+const std::string GETCERT_ROUTE = "/getcert";
+const std::string CHANGEPW_ROUTE = "/changepw";
+const std::string SENDMSG_ENCRYPT_ROUTE = "/sendmsg_encrypt";
+const std::string SENDMSG_MESSAGE_ROUTE = "/sendmsg_message";
+const std::string RECVMSG_ROUTE = "/recvmsg";
 
 int call_server_program(std::string program_name, std::vector<std::string> args)
 {
