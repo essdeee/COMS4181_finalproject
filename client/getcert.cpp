@@ -6,12 +6,16 @@
 #include <stdio.h>
 #include <iostream>
 
-int main()
+int main(int argc, char* argv[])
 {
-    // Take password and username
-    std::string username;
-    std::cout << "Enter username: ";
-    std::cin >> username;
+    if(argc != 2)
+    {
+        std::cerr << "Incorrect number of args. Please enter a username.\n";
+        return 1;
+    }
+
+    // Take username and pass
+    std::string username = argv[1];
     std::string password = getpass("Enter password: ");
 
     // Validate username and password lengths
@@ -20,28 +24,19 @@ int main()
         std::cerr << "Username too long. Aborting.\n";
         return 1;
     }
-    
-    // Hash the password
-    /*
-    Because of salts, the password should get hashed on the server side
-    std::string hashed_pass = hashPassword(password);
-    std::cout << hashed_pass << std::endl;
-    */
 
     // Get CSR
-    BYTE* csr = gen_csr(username);
+    uint8_t* csr = gen_csr(username);
 
     // Generate HTTP request
     HTTPrequest request = getcert_request(username, password, csr);
 
-    // Establish TLS connection
-
-    // send_request("ca-chain.cert.pem", "/getcert", "");
-    send_request("ca-chain.cert.pem", request);
+    // Send cleint request and receive response
+    std::string response = send_request("ca-chain.cert.pem", request);
     
-    // Receive server response
-
-    // Write cert (from server response) to file    
+    // Write cert (from server response) to file
+    std::string certstr = getcert_response(response);
+    save_cert(certstr);
     
     return 0;
 }

@@ -85,7 +85,8 @@ std::string route(const std::string request)
     return response;
 }
 
-void write_file(std::string str, std::string filename){
+void write_file(std::string str, std::string filename)
+{
 	std::ofstream file(filename);
   	file << str;
 	file.close();

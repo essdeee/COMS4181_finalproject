@@ -1,4 +1,5 @@
 #include "client_utils.h"
+#include "base64.h"
 #include <memory.h>
 #include <string>
 #include <stdio.h>
@@ -46,6 +47,7 @@ void print_hex(const BYTE* byte_arr, int len)
 }
 
 
+
 //CSR Generation start
 
 void csr_to_pem(X509_REQ *csr, uint8_t **csr_bytes, size_t *csr_size)
@@ -59,7 +61,7 @@ void csr_to_pem(X509_REQ *csr, uint8_t **csr_bytes, size_t *csr_size)
 	BIO_free_all(bio);
 }
 
-uint8_t gen_csr(std::string client_name)
+uint8_t* gen_csr(std::string client_name)
 {
     int             ret = 0;
     RSA             *r = NULL;
@@ -81,6 +83,10 @@ uint8_t gen_csr(std::string client_name)
     const char      *szCommon = "mail client"; //(szCommonBase + client_name).c_str();
     //printf("%s\n", (const unsigned char*)szCommon);
     const char      *szPath = "csr-1.pem";
+
+    uint8_t* csr_bytes = NULL;
+    size_t csr_size = 0;
+
     // 1. generate rsa key
     bne = BN_new();
     ret = BN_set_word(bne,e);
@@ -138,48 +144,43 @@ uint8_t gen_csr(std::string client_name)
     }
 
     /* Convert csr to PEM format. */
-    uint8_t *csr_bytes = NULL;
-    size_t csr_size = 0;
-
     csr_to_pem(x509_req, &csr_bytes, &csr_size);
 
     //out = BIO_new_file(szPath,"w");
     //ret = PEM_write_bio_X509_REQ(out, x509_req);
 
     // 6. free
-    free_all:
+free_all:
     X509_REQ_free(x509_req);
     BIO_free_all(out);
 
     EVP_PKEY_free(pKey);
     BN_free(bne);
-  
-    
    
     return csr_bytes; 
- }
+}
 
 //CSR Generation end
 
 //Certificate Saving start
 
-void save_cert(std::string cert_str){
-	std::vector<uint8_t> certBytes = base64_decode(cert_str);
-        uint8_t *cert_data = certBytes.data();
-        int cert_data_size = certBytes.size();
-        BIO *bio = NULL;
-        X509* cert = NULL;
-        // Create a read-only BIO backed by the supplied memory buffer
-        bio = BIO_new_mem_buf((void*)cert_data, cert_data_size);
-        PEM_read_bio_X509(bio, &cert, NULL, NULL);
-        // Cleanup
-        BIO_free(bio);
-	
-	BIO             *out = NULL, *bio_err = NULL;
-    	const char      *cPath = "client.pem";
-    	out = BIO_new_file(cPath,"w");
-   	ret = PEM_write_bio_X509(out, crt);
+void save_cert(std::string cert_str)
+{
+    std::vector<uint8_t> certBytes = base64_decode(cert_str);
+    uint8_t *cert_data = certBytes.data();
+    int cert_data_size = certBytes.size();
+    BIO *bio = NULL;
+    X509* cert = NULL;
+    // Create a read-only BIO backed by the supplied memory buffer
+    bio = BIO_new_mem_buf((void*)cert_data, cert_data_size);
+    PEM_read_bio_X509(bio, &cert, NULL, NULL);
+    // Cleanup
+    BIO_free(bio);
 
+    BIO *out = NULL, *bio_err = NULL;
+    const char *cPath = "client.pem";
+    out = BIO_new_file(cPath, "w");
+    int ret = PEM_write_bio_X509(out, cert);
 }
 
 //Certificate Saving end

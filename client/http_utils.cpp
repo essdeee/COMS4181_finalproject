@@ -19,10 +19,28 @@ HTTPrequest getcert_request(std::string username, std::string password, BYTE* cs
     return request;
 }
 
+std::string getcert_response(std::string server_response)
+{
+    std::string cert;
+
+    return server_response;
+}
+
 HTTPrequest changepw_request(std::string username, std::string old_pass, std::string new_pass, BYTE* csr)
 {
     HTTPrequest request;
     request.command_line = "GET " + CHANGEPW_ROUTE + " HTTP/1.0"; // Change to POST
+    request.body = username + "\n";
+    request.body += old_pass + "\n";
+    request.body += new_pass + "\n";
+    request.content_length = std::to_string(request.body.length());
 
     return request;
+}
+
+std::string changepw_response(std::string server_response)
+{
+    std::string cert;
+
+    return server_response;
 }

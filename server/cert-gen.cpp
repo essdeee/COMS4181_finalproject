@@ -7,6 +7,7 @@
 #include <openssl/rand.h>
 #include <openssl/x509v3.h>
 #include <vector>
+#include "base64.h"
 #include "server_utils.h"
 
 int load_ca(const char *ca_key_path, EVP_PKEY **ca_key, const char *ca_crt_path, X509 **ca_crt)
@@ -152,11 +153,11 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 
-        	BIO             *out = NULL, *bio_err = NULL;
-        	//todo this will be folder with cert
-		const char      *cPath = "client.pem";
-        	out = BIO_new_file(cPath,"w");
-        	ret = PEM_write_bio_X509(out, crt);
+		BIO *out = NULL, *bio_err = NULL;
+		//todo this will be folder with cert
+		const char  *cPath = "client.pem";
+		out = BIO_new_file(cPath,"w");
+		ret = PEM_write_bio_X509(out, crt);
 
 		/* Convert key and certificate to PEM format. */
 		uint8_t *crt_bytes = NULL;
@@ -172,14 +173,15 @@ int main(int argc, char *argv[])
 
 		/* Free stuff. */
 		EVP_PKEY_free(ca_key);
-        	BIO_free_all(out);
+        BIO_free_all(out);
 		X509_free(ca_crt);
 		X509_free(crt);
 		free(crt_bytes);
 
 		return 0;
 	}
-	else{
+	else
+	{
 		return 1;
 	}
 }

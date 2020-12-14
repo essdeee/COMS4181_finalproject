@@ -19,7 +19,9 @@ struct HTTPrequest
 
 /**************************** FUNCTION DECLARATIONS *****************/
 HTTPrequest getcert_request(std::string username, std::string password, BYTE* csr);
+std::string getcert_response(std::string server_response);
 HTTPrequest changepw_request(std::string username, std::string old_pass, std::string new_pass, BYTE* csr);
+std::string changepw_response(std::string server_response);
 HTTPrequest sendmsg_encrypt_request(std::string recipient, BYTE* cert);
 HTTPrequest sendmsg_message_request(std::string recipient, BYTE* msg);
 HTTPrequest recvmsg_request(BYTE* cert);

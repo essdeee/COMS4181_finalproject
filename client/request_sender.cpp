@@ -179,7 +179,7 @@ void verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
 
 } // namespace my
 
-int send_request(std::string chain_file, HTTPrequest request)
+std::string send_request(std::string chain_file, HTTPrequest request)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_library_init();
@@ -221,6 +221,5 @@ int send_request(std::string chain_file, HTTPrequest request)
     my::send_http_request(ssl_bio.get(), request, "localhost");
     std::string response = my::receive_http_message(ssl_bio.get());
     printf("%s", response.c_str());
-
-    return 0;
+    return response;
 }
