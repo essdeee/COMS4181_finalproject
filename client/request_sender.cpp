@@ -136,7 +136,7 @@ void send_http_request(BIO *bio, const HTTPrequest request_obj, const std::strin
     // Body
     request += request_obj.body;
 
-    std::cout << request << std::endl;
+    //std::cout << request << std::endl;
     BIO_write(bio, request.data(), request.size());
     BIO_flush(bio);
 }

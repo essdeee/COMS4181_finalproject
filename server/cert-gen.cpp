@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
+#include <iostream>
 #include <openssl/err.h>
 #include <openssl/conf.h>
 #include <openssl/pem.h>
@@ -114,7 +115,8 @@ void print_bytes(uint8_t *data, size_t size)
 
 int main(int argc, char *argv[])
 {
-	if(argc == 2){
+	if(argc == 2)
+	{
 		//read first arg and decode as X509_REQ
 		std::string csrStr = argv[1];
 		std::vector<uint8_t> csrBytes = base64_decode(csrStr);
@@ -139,8 +141,9 @@ int main(int argc, char *argv[])
 		/* Load CA key and cert. */
 		EVP_PKEY *ca_key = NULL;
 		X509 *ca_crt = NULL;
-		if (!load_ca(ca_key_path, &ca_key, ca_crt_path, &ca_crt)) {
-			fprintf(stderr, "Failed to load CA certificate and/or key!\n");
+		if (!load_ca(ca_key_path, &ca_key, ca_crt_path, &ca_crt)) 
+		{
+			std::cerr << "Failed to load CA certificate and/or key!\n";
 			return 1;
 		}
 
@@ -148,8 +151,9 @@ int main(int argc, char *argv[])
 		X509 *crt = NULL;
 
 		int ret = sign_csr(ca_key, ca_crt, &crt, req);
-		if (!ret) {
-			fprintf(stderr, "Failed to generate key pair!\n");
+		if (!ret) 
+		{
+			std::cerr << "Failed to generate key pair!\n";
 			return 1;
 		}
 
@@ -182,6 +186,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
+		std::cerr << "cert-gen received invalid number of arguments.\n";
 		return 1;
 	}
 }

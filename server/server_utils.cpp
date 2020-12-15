@@ -8,6 +8,9 @@
 #include "server_utils.h"
 #include "route_utils.h"
 
+// CONSTANTS AND MACROS
+const std::string PASSWORD_FILE = "pass.txt";
+
 std::string generateSalt() 
 {
     const char alphanum[] =
@@ -29,11 +32,16 @@ std::string generateSalt()
     return std::string(salt);
 }
 
-std::string hashPassword(std::string password)
+std::string hash_password(std::string password)
 {
     std::string salt = generateSalt();
     std::string hash = crypt(password.c_str(), salt.c_str());
     return hash;
+}
+
+std::string hash_password(std::string password, std::string salt)
+{
+    return crypt(password.c_str(), salt.c_str());
 }
 
 std::vector<std::string> split(std::string str,std::string sep)
@@ -60,48 +68,87 @@ std::string convert_to_lower(const std::string str)
     return converted_str;
 }
 
+HTTPrequest parse_request(const std::string request)
+{
+    HTTPrequest parsed_request;
+    std::istringstream f(request);
+    std::string line;
+    std::string request_body;
+    bool cmd_line_flag = true;
+    bool request_body_flag = false;
+    while ( std::getline(f, line) )
+    {
+        // Remove all carriage returns
+        line.erase( std::remove(line.begin(), line.end(), '\r'), line.end());
+
+        if (cmd_line_flag)
+        {
+            cmd_line_flag = false;
+            parsed_request.command_line = line;
+        }
+        else if ( line.empty() )
+        {
+            request_body_flag = true;
+        }
+        else if ( request_body_flag )
+        {
+            request_body += line + "\n";
+        }
+        else if ( convert_to_lower(line).find("content-length:") != std::string::npos )
+        {
+            std::vector<std::string> split_content_len = split(line, ":");
+            std::string content_len_str = split_content_len[1];
+            std::string::iterator end_pos = std::remove(content_len_str.begin(), content_len_str.end(), ' ');
+            content_len_str.erase(end_pos, content_len_str.end());
+            parsed_request.content_length = content_len_str;
+        }
+        else
+        {
+            continue;
+        }
+    }
+
+    parsed_request.body = request_body;
+    return parsed_request;
+}
+
 std::string route(const std::string request)
 {
     // HTTPS response at the end
     std::string response;
 
-    // Parse out the route
-    std::vector<std::string> request_lines;
-    request_lines = split(request, "\n");
+    // Parse out the command line, content length, and body
+    HTTPrequest parsed_request = parse_request(request);
+
+    // Parse out the route and integer valued content length
     std::vector<std::string> first_line;
-    first_line = split(request_lines[0], " ");
-
-    // Determine the route
+    first_line = split(parsed_request.command_line, " ");
     std::string route = first_line[1];
-
-    // TODO: Parse out the body and content-length of the request 
-    int content_length;
-    std::string request_body;
 
     // Execute the program
     if(route == GETCERT_ROUTE)
     {
-        response = getcert_route(content_length, request_body);
+        response = getcert_route(std::stoi(parsed_request.content_length), parsed_request.body);
         response = GETCERT_ROUTE + "\n";
     }
     else if(route == CHANGEPW_ROUTE)
     {
-        response = changepw_route(content_length, request_body);
+        response = changepw_route(std::stoi(parsed_request.content_length), parsed_request.body);
         response = CHANGEPW_ROUTE + "\n";
     }
     else if(route == SENDMSG_ENCRYPT_ROUTE)
     {
-        response = sendmsg_encrypt_route(content_length, request_body);
+        response = sendmsg_encrypt_route(std::stoi(parsed_request.content_length), parsed_request.body);
         response = SENDMSG_ENCRYPT_ROUTE + "\n";
     }
     else if(route == SENDMSG_MESSAGE_ROUTE)
     {
-        response = sendmsg_message_route(content_length, request_body);
+        response = sendmsg_message_route(std::stoi(parsed_request.content_length), parsed_request.body);
         response = SENDMSG_MESSAGE_ROUTE + "\n";
     }
     else if(route == RECVMSG_ROUTE)
     {
-        response = recvmsg_route(content_length, request_body);
+        response = recvmsg_route(std::stoi(parsed_request.content_length), parsed_request.body);
         response = RECVMSG_ROUTE + "\n";
     }
     else

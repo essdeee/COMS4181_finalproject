@@ -5,14 +5,15 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "route_utils.h"
+#include "server_utils.h"
 
 // CONSTANTS AND MACROS
-const std::string VERIFY_PASS_PATH = "./../pass/bin/verify-pass";
-const std::string UPDATE_PASS_PATH = "./../pass/bin/update-pass";
-const std::string CERT_GEN_PATH = "./../client_certs/bin/cert-gen";
-const std::string FETCH_CERT_PATH = "./../client_certs/bin/fetch-cert";
-const std::string MAIL_OUT_PATH = "./../mail/bin/mail-out";
-const std::string MAIL_IN_PATH = "./../mail/bin/mail-in";
+const std::string VERIFY_PASS_PATH = "./verify-pass";
+const std::string UPDATE_PASS_PATH = "./update-pass";
+const std::string CERT_GEN_PATH = "./cert-gen";
+const std::string FETCH_CERT_PATH = "./fetch-cert";
+const std::string MAIL_OUT_PATH = "./mail-out";
+const std::string MAIL_IN_PATH = "./mail-in";
 
 const std::string GETCERT_ROUTE = "/getcert";
 const std::string CHANGEPW_ROUTE = "/changepw";
@@ -49,32 +50,32 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         dup2(pipe_fd[0], STDIN_FILENO);  // Replace stdin with the reading end of the pipe
         
         // Branch for each of the possible execl server programs
-        if ( program_name == "verify-pass")
+        if ( program_name == "verify-pass" )
         {
             // arg[0] = username
             // arg[1] = password
-            execl(VERIFY_PASS_PATH.c_str(), VERIFY_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
+            status = execl(VERIFY_PASS_PATH.c_str(), VERIFY_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
         }
         else if ( program_name == "update-pass" )
         {
-            execl(UPDATE_PASS_PATH.c_str(), UPDATE_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
+            status = execl(UPDATE_PASS_PATH.c_str(), UPDATE_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
         }
         else if ( program_name == "cert-gen" )
         {
             // arg[0] = csr string
-            execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str());
+            status = execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str());
         }
         else if ( program_name == "fetch-cert" )
         {
-            execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), args[1].c_str());
+            status = execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), args[1].c_str());
         }
         else if ( program_name == "mail-out" )
         {
-            execl(MAIL_OUT_PATH.c_str(), MAIL_OUT_PATH.c_str(), args[0].c_str());
+            status = execl(MAIL_OUT_PATH.c_str(), MAIL_OUT_PATH.c_str(), args[0].c_str());
         }
         else if ( program_name == "mail-in" )
         {
-            execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), args[1].c_str());
+            status = execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), args[1].c_str());
         }
     } 
     else 
@@ -92,14 +93,23 @@ std::string getcert_route(int content_length, std::string request_body)
 {
     std::string response;
 
-    // TODO: Parse out the username and password from request
-    std::string username;
-    std::string password;
-    std::string csr_string;
+    // Parse out the username, password, and csr string from request
+    std::vector<std::string> split_body = split(request_body, "\n");
+    if (split_body.size() != 3)
+    {
+        std::cerr << "Request body not in valid format for getcert. Aborting.\n";
+        response = "Request body not in valid format for getcert. Aborting.\n";
+        return response;
+    }
+
+    std::string username = split_body[0];
+    std::string password = split_body[1];
+    std::string csr_string = split_body[2];
     std::vector<std::string> verify_pass_args {username, password};
  
-    if (call_server_program("verify-pass", verify_pass_args))
+    if (call_server_program("verify-pass", verify_pass_args) == 0)
     {
+        std::cout << "Client username and password is valid. Now generating certificate...\n";
         std::vector<std::string> cert_gen_args {csr_string};
         if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
         {
@@ -126,11 +136,19 @@ std::string changepw_route(int content_length, std::string request_body)
 {
     std::string response;
 
-    // TODO: Parse out the username and password from request
-    std::string username;
-    std::string old_password;
-    std::string new_password;
-    std::string csr_string;
+    // Parse out the username and passwords from request
+    std::vector<std::string> split_body = split(request_body, "\n");
+    if (split_body.size() != 4)
+    {
+        std::cerr << "Request body not in valid format for changepw. Aborting.\n";
+        response = "Request body not in valid format for changepw. Aborting.\n";
+        return response;
+    }
+
+    std::string username = split_body[0]; 
+    std::string old_password = split_body[1];
+    std::string new_password = split_body[2];
+    std::string csr_string = split_body[3];
     std::vector<std::string> verify_pass_args {username, old_password};
 
     if (call_server_program("verify-pass", verify_pass_args) != 0)
