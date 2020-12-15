@@ -10,6 +10,21 @@
 #include <vector>
 #include "base64.h"
 #include "server_utils.h"
+#include <cstring>
+
+int pass_cb(char *buf, int size, int rwflag, void *u)
+ {
+
+     /* get pass phrase, length 'len' into 'tmp' */
+     std::string tmp = "int_ca_pass";
+
+     size_t len = strlen(tmp.c_str());
+
+     if (len > size)
+         len = size;
+     memcpy(buf, tmp.c_str(), len);
+     return len;
+ }
 
 int load_ca(const char *ca_key_path, EVP_PKEY **ca_key, const char *ca_crt_path, X509 **ca_crt)
 {
@@ -27,7 +42,7 @@ int load_ca(const char *ca_key_path, EVP_PKEY **ca_key, const char *ca_crt_path,
 	/* Load CA private key. */
 	bio = BIO_new(BIO_s_file());
 	if (!BIO_read_filename(bio, ca_key_path)) goto free;
-	*ca_key = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
+	*ca_key = PEM_read_bio_PrivateKey(bio, NULL, pass_cb, NULL);
 	if (!ca_key) goto free;
 	BIO_free_all(bio);
 	return 1;
@@ -119,6 +134,7 @@ int main(int argc, char *argv[])
 	{
 		//read first arg and decode as X509_REQ
 		std::string csrStr = argv[1];
+		std::cout << csrStr;
 		std::vector<uint8_t> csrBytes = base64_decode(csrStr);
 		uint8_t *csr_data = csrBytes.data();
 
