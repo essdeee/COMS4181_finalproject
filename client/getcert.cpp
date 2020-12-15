@@ -32,6 +32,7 @@ int main(int argc, char* argv[])
     
     // Generate HTTP request
     HTTPrequest request = getcert_request(username, password, csr);
+    std::cout << request.body << std::endl;
 
     // Send cleint request and receive response
     std::string response = send_request("ca-chain.cert.pem", request);

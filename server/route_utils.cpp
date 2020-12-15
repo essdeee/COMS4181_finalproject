@@ -54,28 +54,28 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         {
             // arg[0] = username
             // arg[1] = password
-            status = execl(VERIFY_PASS_PATH.c_str(), VERIFY_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
+            status = execl(VERIFY_PASS_PATH.c_str(), VERIFY_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "update-pass" )
         {
-            status = execl(UPDATE_PASS_PATH.c_str(), UPDATE_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str());
+            status = execl(UPDATE_PASS_PATH.c_str(), UPDATE_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "cert-gen" )
         {
             // arg[0] = csr string
-            status = execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str());
+            status = execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str(), NULL);
         }
         else if ( program_name == "fetch-cert" )
         {
-            status = execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), args[1].c_str());
+            status = execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "mail-out" )
         {
-            status = execl(MAIL_OUT_PATH.c_str(), MAIL_OUT_PATH.c_str(), args[0].c_str());
+            status = execl(MAIL_OUT_PATH.c_str(), MAIL_OUT_PATH.c_str(), args[0].c_str(), NULL);
         }
         else if ( program_name == "mail-in" )
         {
-            status = execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), args[1].c_str());
+            status = execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
     } 
     else 
