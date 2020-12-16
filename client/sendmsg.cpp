@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     std::cout << request.body << std::endl;
 
     // Send cleint request and receive response
-    std::string response = send_request("ca-chain.cert.pem", request);
+    std::string response = send_request("ca-chain.cert.pem", request); // Must be client-auth
     
     // Write encryption certs (from server response) to file
     std::vector<std::string> encrypt_certs = sendmsg_encrypt_response(response);
