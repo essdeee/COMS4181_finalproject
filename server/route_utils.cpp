@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h>
+#include <fstream>
 #include <sys/wait.h>
 #include "route_utils.h"
 #include "server_utils.h"
@@ -115,6 +116,8 @@ std::string getcert_route(int content_length, std::string request_body)
         {
             // TODO: Read newly created cert from tmp file
             std::string cert; // Placeholder for now
+            std::ifstream infile("tmp-crt");
+            infile >> cert;
             response = cert;
         }
         else

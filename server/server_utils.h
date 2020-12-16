@@ -5,6 +5,7 @@
 
 /**************************** CONSTANTS ******************************/
 extern const std::string PASSWORD_FILE;
+extern const std::string TEMP_CRT_FILE;
 
 /**************************** OBJECTS ********************************/
 struct HTTPrequest

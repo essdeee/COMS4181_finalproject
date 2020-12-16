@@ -10,6 +10,7 @@
 
 // CONSTANTS AND MACROS
 const std::string PASSWORD_FILE = "pass.txt";
+const std::string TMP_CERT_FILE = "tmp-crt";
 
 std::string generateSalt() 
 {
@@ -129,12 +130,10 @@ std::string route(const std::string request)
     if(route == GETCERT_ROUTE)
     {
         response = getcert_route(std::stoi(parsed_request.content_length), parsed_request.body);
-        response = GETCERT_ROUTE + "\n";
     }
     else if(route == CHANGEPW_ROUTE)
     {
         response = changepw_route(std::stoi(parsed_request.content_length), parsed_request.body);
-        response = CHANGEPW_ROUTE + "\n";
     }
     else if(route == SENDMSG_ENCRYPT_ROUTE)
     {
