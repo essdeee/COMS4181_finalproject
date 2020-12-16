@@ -163,6 +163,113 @@ int save_cert(std::string cert_str, std::string file_name)
 //Certificate Saving end
 
 
+//Encrypt Decrypt start
+
+std::string encrypt(const std::string &clear_text, const X509 &enc_crt)
+{
+	std::string encrypt_text;
+
+    EVP_PKEY * pubkey;
+    pubkey = X509_get_pubkey(enc_crt);
+
+    RSA * rsa
+    rsa = EVP_PKEY_get1_RSA(pubkey);
+ 
+	// Get the maximum length of the data block that RSA can process at a time
+	int key_len = RSA_size(rsa);
+	int block_len = key_len-11; // Because the filling method is RSA_PKCS1_PADDING, so you need to subtract 11 from the key_len
+ 
+	// Apply for memory: store encrypted ciphertext data
+	char *sub_text = new char[key_len + 1];
+	memset(sub_text, 0, key_len + 1);
+	int ret = 0;
+	int pos = 0;
+	std::string sub_str;
+	// Encrypt the data in segments (the return value is the length of the encrypted data)
+	while (pos < clear_text.length()) {
+		sub_str = clear_text.substr(pos, block_len);
+		memset(sub_text, 0, key_len + 1);
+		ret = RSA_public_encrypt(sub_str.length(), (const unsigned char*)sub_str.c_str(), (unsigned char*)sub_text, rsa, RSA_PKCS1_PADDING);
+		if (ret >= 0) {
+			encrypt_text.append(std::string(sub_text, ret));
+		}
+		pos += block_len;
+	}
+	
+	 // release memory  
+    EVP_PKEY_free (pubkey);
+	RSA_free(rsa);
+	delete[] sub_text;
+ 
+	return encrypt_text;
+}
+
+int load_priv_key(const char *priv_key_path, EVP_PKEY **priv_key)
+{
+	BIO *bio = NULL;
+	*priv_key = NULL;
+
+	/* Load private key. */
+	bio = BIO_new(BIO_s_file());
+	if (!BIO_read_filename(bio, priv_key_path)) goto free;
+	*priv_key = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
+	if (!priv_key) goto free;
+	BIO_free_all(bio);
+	return 1;
+free:
+	BIO_free_all(bio);
+	EVP_PKEY_free(*priv_key);
+	return 0;
+}
+
+std::string decrypt(const std::string &cipher_text, EVP_PKEY **priv_key)
+{
+	std::string decrypt_text;
+    
+    RSA *rsa = EVP_PKEY_get1_RSA(priv_key);
+
+	if (rsa == nullptr) {
+		 unsigned long err = ERR_get_error(); //Get the error number
+		char err_msg[1024] = { 0 };
+		 ERR_error_string(err, err_msg); // Format: error:errId: library: function: reason
+		printf("err msg: err:%ld, msg:%s\n", err, err_msg);
+		return std::string();
+	}
+ 
+	 // Get the maximum length of RSA single processing
+	int key_len = RSA_size(rsa);
+	char *sub_text = new char[key_len + 1];
+	memset(sub_text, 0, key_len + 1);
+	int ret = 0;
+	std::string sub_str;
+	int pos = 0;
+	 // Decrypt the ciphertext in segments
+	while (pos < cipher_text.length()) {
+		sub_str = cipher_text.substr(pos, key_len);
+		memset(sub_text, 0, key_len + 1);
+		ret = RSA_private_decrypt(sub_str.length(), (const unsigned char*)sub_str.c_str(), (unsigned char*)sub_text, rsa, RSA_PKCS1_PADDING);
+		if (ret >= 0) {
+			decrypt_text.append(std::string(sub_text, ret));
+			printf("pos:%d, sub: %s\n", pos, sub_text);
+			pos += key_len;
+		}
+	}
+	// release memory  
+	delete[] sub_text;
+	RSA_free(rsa);
+ 
+	return decrypt_text;
+}
+
+
+//Encrypt Decrypt end
+
+
+
+
+
+
+
 /*
 NOTE: THIS HASHES THE NULL-TERMINATING CHARACTER
 void iterate_sha256(std::string password, BYTE* final_hash, int rounds)
