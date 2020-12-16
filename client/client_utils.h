@@ -16,6 +16,6 @@ void print_hex(const BYTE* byte_arr, int len);
 
 void csr_to_pem(X509_REQ *csr, uint8_t **csr_bytes, size_t *csr_size);
 std::vector<BYTE> gen_csr(std::string client_name);
-int save_cert(std::string cert_str);
+int save_cert(std::string cert_str, std::string file_name);
 
 #endif

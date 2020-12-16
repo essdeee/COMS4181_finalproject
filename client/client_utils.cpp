@@ -140,7 +140,7 @@ free_all:
 
 //Certificate Saving start
 
-int save_cert(std::string cert_str)
+int save_cert(std::string cert_str, std::string file_name)
 {
     std::vector<uint8_t> certBytes = base64_decode(cert_str);
     uint8_t *cert_data = certBytes.data();
@@ -154,7 +154,7 @@ int save_cert(std::string cert_str)
     BIO_free(bio);
 
     BIO *out = NULL, *bio_err = NULL;
-    const char *cPath = "client.pem";
+    const char *cPath = file_name.c_str();
     out = BIO_new_file(cPath, "w");
     int ret = PEM_write_bio_X509(out, cert);
     return ret;

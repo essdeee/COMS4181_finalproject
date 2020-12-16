@@ -24,7 +24,6 @@ HTTPrequest getcert_request(std::string username, std::string password, std::vec
 std::string getcert_response(std::string server_response)
 {
     std::string cert;
-
     return server_response;
 }
 
@@ -44,6 +43,35 @@ HTTPrequest changepw_request(std::string username, std::string old_pass, std::st
 std::string changepw_response(std::string server_response)
 {
     std::string cert;
-
     return server_response;
+}
+
+HTTPrequest sendmsg_encrypt_request(std::vector<std::string> recipients)
+{
+    HTTPrequest request;
+    request.command_line = "POST " + CHANGEPW_ROUTE + " HTTP/1.0"; // Change to POST
+    for (std::string recipient : recipients)
+    {
+        request.body += recipient + "\n";
+    }
+
+    return request;
+}
+
+std::vector<std::string> sendmsg_encrypt_response(std::string server_response)
+{
+    std::vector<std::string> encrypt_certs;
+    return encrypt_certs;
+}
+
+HTTPrequest sendmsg_message_request(std::vector<std::string> messages)
+{
+    HTTPrequest request;
+    request.command_line = "POST " + CHANGEPW_ROUTE + " HTTP/1.0"; // Change to POST
+    for (std::string message : messages)
+    {
+        request.body += message + "\n";
+    }
+
+    return request;
 }

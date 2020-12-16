@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 		write_file(crt_str, "tmp-crt");
 		
 		/* Print key and certificate. */
-		print_bytes(crt_bytes, crt_size);
+		//print_bytes(crt_bytes, crt_size);
 
 		/* Free stuff. */
 		EVP_PKEY_free(ca_key);

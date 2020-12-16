@@ -22,8 +22,9 @@ HTTPrequest getcert_request(std::string username, std::string password, std::vec
 std::string getcert_response(std::string server_response);
 HTTPrequest changepw_request(std::string username, std::string old_pass, std::string new_pass, std::vector<BYTE> csr);
 std::string changepw_response(std::string server_response);
-HTTPrequest sendmsg_encrypt_request(std::string recipient, BYTE* cert);
-HTTPrequest sendmsg_message_request(std::string recipient, BYTE* msg);
+HTTPrequest sendmsg_encrypt_request(std::vector<std::string> recipients);
+std::vector<std::string> sendmsg_encrypt_response(std::string server_response);
+HTTPrequest sendmsg_message_request(std::vector<std::string> messages);
 HTTPrequest recvmsg_request(BYTE* cert);
 
 #endif

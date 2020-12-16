@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 
     // Write cert (from server response) to file    
     std::string certstr = changepw_response(response);
-    if(save_cert(certstr) == 1)
+    if(save_cert(certstr, "client.pem") == 1)
     {
         std::cerr << "Could not successfully save certificate.\n";
     }

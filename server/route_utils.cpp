@@ -22,6 +22,9 @@ const std::string SENDMSG_ENCRYPT_ROUTE = "/sendmsg_encrypt";
 const std::string SENDMSG_MESSAGE_ROUTE = "/sendmsg_message";
 const std::string RECVMSG_ROUTE = "/recvmsg";
 
+const std::string FETCH_ENCRYPT_CERT = "encrypt";
+const std::string FETCH_SIGN_CERT = "sign";
+
 int call_server_program(std::string program_name, std::vector<std::string> args)
 {
     // Open up mail-out for each message we want to mailbox to send to
@@ -114,11 +117,18 @@ std::string getcert_route(int content_length, std::string request_body)
         std::vector<std::string> cert_gen_args {csr_string};
         if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
         {
-            // TODO: Read newly created cert from tmp file
+            // Read newly created certificate from tmp file
             std::string cert; // Placeholder for now
             std::ifstream infile("tmp-crt");
             infile >> cert;
             response = cert;
+
+            if( remove( "tmp-crt" ) != 0 )
+            {
+                std::cerr << "Error deleting tmp file. getcert failed on server end.\n";
+                response = "Error deleting tmp file. getcert failed on server end.\n";
+                return response;
+            }
         }
         else
         {
@@ -202,9 +212,18 @@ std::string sendmsg_encrypt_route(int content_length, std::string request_body)
 {
     std::string response;
 
+    // Body is just a list of recipients
+    std::vector<std::string> recipients = split(request_body, "\n");
+    if (recipients.size() == 0)
+    {
+        std::cerr << "Request body not in valid format for sendmsg_encrypt. Aborting.\n";
+        response = "Request body not in valid format for sendmsg_encrypt. Aborting.\n";
+        return response;
+    }
+
     // TODO: Parse out the recipient from request
     std::string recipient;
-    std::string encryptCert = "1";
+    std::string encryptCert = FETCH_ENCRYPT_CERT;
     std::vector<std::string> fetch_cert_args {recipient, encryptCert};
 
     if(call_server_program("fetch-cert", fetch_cert_args) == 0)
