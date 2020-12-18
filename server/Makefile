@@ -1,4 +1,4 @@
-all: request-handler cert-gen fetch-cert verify-pass update-pass
+all: request-handler cert-gen fetch-cert verify-pass update-pass mail-out
 .PHONY: all
 
 request-handler: request-handler.o route_utils.o server_utils.o
@@ -34,6 +34,12 @@ update-pass: update-pass.o server_utils.o route_utils.o
 update-pass.o: update-pass.cpp
 	g++ update-pass.cpp -c -lcrypt -std=c++17
 
+mail-out: mail-out.o server_utils.o route_utils.o
+	g++ mail-out.o server_utils.o route_utils.o -lssl -lcrypto -lcrypt -o mail-out -std=c++17
+
+mail-out.o: mail-out.cpp
+	g++ mail-out.cpp -c -lcrypt -std=c++17
+
 server_utils.o: server_utils.cpp
 	g++ server_utils.cpp -c -lcrypt -std=c++17
 
@@ -42,4 +48,4 @@ base64.o: base64.cpp
 
 .PHONY: clean
 clean:
-	rm *.o request-handler cert-gen verify-pass update-pass
+	rm *.o request-handler cert-gen verify-pass update-pass fetch-cert mail-out

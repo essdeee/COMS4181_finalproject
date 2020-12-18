@@ -1,6 +1,7 @@
 #ifndef ROUTE_UTILS_H
 #define ROUTE_UTILS_H
 #include <string>
+#include "server_utils.h"
 
 /**************************** CONSTANTS ******************************/
 extern const std::string VERIFY_PASS_PATH;
@@ -20,10 +21,10 @@ extern const std::string FETCH_ENCRYPT_CERT;
 extern const std::string FETCH_SIGN_CERT;
 
 /**************************** FUNCTION DECLARATIONS *****************/
-std::string getcert_route(int content_length, std::string request_body);
-std::string changepw_route(int content_length, std::string request_body);
-std::string sendmsg_encrypt_route(int content_length, std::string request_body);
-std::string sendmsg_message_route(int content_length, std::string request_body);
-std::string recvmsg_route(int content_length, std::string request_body);
+HTTPresponse getcert_route(int content_length, std::string request_body);
+HTTPresponse changepw_route(int content_length, std::string request_body);
+HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body);
+HTTPresponse sendmsg_message_route(int content_length, std::string request_body);
+HTTPresponse recvmsg_route(int content_length, std::string request_body);
 
 #endif

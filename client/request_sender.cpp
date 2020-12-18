@@ -125,11 +125,10 @@ std::string receive_http_message(BIO *bio)
     return headers + "\r\n" + body;
 }
 
-void send_http_request(BIO *bio, const HTTPrequest request_obj, const std::string& host)
+void send_http_request(BIO *bio, const HTTPrequest request_obj)
 {
     // Header
     std::string request = request_obj.command_line + "\r\n";
-    request += "Host: " + host + "\r\n";
     request += "Content-Length: " + request_obj.content_length + "\r\n";
     request += "\r\n";
 
@@ -156,7 +155,6 @@ void verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
     int err = SSL_get_verify_result(ssl);
     if (err != X509_V_OK) {
         const char *message = X509_verify_cert_error_string(err);
-        std::cout << "hello!" << std::endl;
         fprintf(stderr, "Certificate verification error: %s (%d)\n", message, err);
         exit(1);
     }
@@ -197,7 +195,7 @@ std::string send_request(std::string chain_file, HTTPrequest request)
         my::print_errors_and_exit("Error setting up trust store");
     }
 
-    auto bio = my::UniquePtr<BIO>(BIO_new_connect("localhost:8080"));
+    auto bio = my::UniquePtr<BIO>(BIO_new_connect((request.hostname + ":" + request.port).c_str()));
     if (bio == nullptr) {
         my::print_errors_and_exit("Error in BIO_new_connect");
     }
@@ -207,19 +205,17 @@ std::string send_request(std::string chain_file, HTTPrequest request)
     auto ssl_bio = std::move(bio)
         | my::UniquePtr<BIO>(BIO_new_ssl(ctx.get(), 1))
         ;
-    SSL_set_tlsext_host_name(my::get_ssl(ssl_bio.get()), "localhost");
+    SSL_set_tlsext_host_name(my::get_ssl(ssl_bio.get()), request.hostname.c_str());
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-    SSL_set1_host(my::get_ssl(ssl_bio.get()), "localhost");
+    SSL_set1_host(my::get_ssl(ssl_bio.get()), request.hostname.c_str());
 #endif
     if (BIO_do_handshake(ssl_bio.get()) <= 0) {
         my::print_errors_and_exit("Error in BIO_do_handshake");
     }
-    my::verify_the_certificate(my::get_ssl(ssl_bio.get()), "localhost");
+    my::verify_the_certificate(my::get_ssl(ssl_bio.get()), request.hostname.c_str());
 
-    // std::string get_header = "GET " + route + " HTTP/1.0";
-
-    my::send_http_request(ssl_bio.get(), request, "localhost");
+    my::send_http_request(ssl_bio.get(), request);
     std::string response = my::receive_http_message(ssl_bio.get());
-    printf("%s", response.c_str());
+    //printf("%s", response.c_str());
     return response;
 }

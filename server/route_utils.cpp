@@ -93,16 +93,19 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
     return status;
 }
 
-std::string getcert_route(int content_length, std::string request_body)
+HTTPresponse getcert_route(int content_length, std::string request_body)
 {
-    std::string response;
+    HTTPresponse response;
+    response.error = false;
 
     // Parse out the username, password, and csr string from request
     std::vector<std::string> split_body = split(request_body, "\n");
     if (split_body.size() != 3)
     {
         std::cerr << "Request body not in valid format for getcert. Aborting.\n";
-        response = "Request body not in valid format for getcert. Aborting.\n";
+        response.command_line = HTTP_VERSION + " 400" + " Request body not in valid format for getcert. Aborting.";
+        response.status_code = "400";
+        response.error = true;
         return response;
     }
 
@@ -121,40 +124,54 @@ std::string getcert_route(int content_length, std::string request_body)
             std::string cert; // Placeholder for now
             std::ifstream infile("tmp-crt");
             infile >> cert;
-            response = cert;
+            response.body = cert;
 
             if( remove( "tmp-crt" ) != 0 )
             {
-                std::cerr << "Error deleting tmp file. getcert failed on server end.\n";
-                response = "Error deleting tmp file. getcert failed on server end.\n";
+                std::cerr << "Error deleting tmp file. getcert failed on server end. Aborting.\n";
+                response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
+                response.status_code = "500";
+                response.error = true;
                 return response;
             }
         }
         else
         {
             std::cerr << "Certificate generation failed on server end. cert-gen failed.\n";
-            response = "Certificate generation failed (cert-gen failed).\n";
+            response.command_line = HTTP_VERSION + " 500" + " Certificate generation failed on server end. cert-gen failed.";
+            response.status_code = "500";
+            response.error = true;
+            return response;
         }
     }
     else
     {
         std::cerr << "Client specified invalid username/password. verify-pass failed.\n";
-        response = "Invalid username/password (verify-pass failed).\n";
+        response.command_line = HTTP_VERSION + " 400" + " Client specified invalid username/password. verify-pass failed.";
+        response.status_code = "400";
+        response.error = true;
+        return response;
     }
 
+    response.command_line = HTTP_VERSION + " 200 OK";
+    response.status_code = "200";
+    response.content_length = response.body.size();
     return response;
 }
 
-std::string changepw_route(int content_length, std::string request_body)
+HTTPresponse changepw_route(int content_length, std::string request_body)
 {
-    std::string response;
+    HTTPresponse response;
+    response.error = false;
 
     // Parse out the username and passwords from request
     std::vector<std::string> split_body = split(request_body, "\n");
     if (split_body.size() != 4)
     {
         std::cerr << "Request body not in valid format for changepw. Aborting.\n";
-        response = "Request body not in valid format for changepw. Aborting.\n";
+        response.command_line = HTTP_VERSION + " 400" + " Request body not in valid format for changepw. Aborting.";
+        response.status_code = "400";
+        response.error = true;
         return response;
     }
 
@@ -167,16 +184,20 @@ std::string changepw_route(int content_length, std::string request_body)
     if (call_server_program("verify-pass", verify_pass_args) != 0)
     {
         std::cerr << "Client specified invalid username/password. verify-pass failed.\n";
-        response = "Invalid username/password (verify-pass failed).\n";
+        response.command_line = HTTP_VERSION + " 400" + " Client specified invalid username/password. verify-pass failed.";
+        response.status_code = "400";
+        response.error = true;
         return response;
     }
     
     std::vector<std::string> mail_out_args {username};
 
-    if (call_server_program("mail-out", mail_out_args) != 0)
+    if (call_server_program("mail-out", mail_out_args) == 0)
     {
-        std::cerr << "Message not found. mail-pass failed.\n";
-        response = "Message not found. (mail-out failed).\n";
+        std::cerr << "Message still found in inbox. Password cannot be updated yet.\n";
+        response.command_line = HTTP_VERSION + " 500" + " Password cannot be updated yet; use recvmsg to download pending message(s).";
+        response.status_code = "500";
+        response.error = true;
         return response;
     }
     
@@ -185,39 +206,58 @@ std::string changepw_route(int content_length, std::string request_body)
     if (call_server_program("update-pass", update_pass_args) != 0)
     {
         std::cerr << "Password could not be updated. update-pass failed.\n";
-        response = "Password could not be updated. (update-pass failed).\n";
+        response.command_line = HTTP_VERSION + " 500" + " Password could not be updated. update-pass failed on server end.";
+        response.status_code = "500";
+        response.error = true;
         return response;
     }
-
-    // TODO: Write public key to file (?) so cert-gen can get it through stdin?
-    // Passing a public key throguh command line arg seems very janky...
-
+    
     std::vector<std::string> cert_gen_args {csr_string};
     if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
     {
-        // TODO: Read newly created cert from tmp file
-        std::string cert; // Placeholder for now
-        response = cert;
+        std::string cert;
+        std::ifstream infile("tmp-crt");
+        infile >> cert;
+        response.body = cert;
+
+        if( remove( "tmp-crt" ) != 0 )
+        {
+            std::cerr << "Error deleting tmp file. getcert failed on server end. Aborting.\n";
+            response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
+            response.status_code = "500";
+            response.error = true;
+            return response;
+        }
+        response.body = cert;
     }
     else
     {
-        std::cerr << "Certificate generation failed on server end. cert-gen failed.\n";
-        response = "Certificate generation failed (cert-gen failed).\n";
+        std::cerr << "Certificate generation failed. cert-gen failed.\n";
+        response.command_line = HTTP_VERSION + " 500" + " Certificate generation failed on server end.";
+        response.status_code = "500";
+        response.error = true;
+        return response;
     }
 
+    response.command_line = HTTP_VERSION + " 200 OK";
+    response.status_code = "200";
+    response.content_length = response.body.size();
     return response;
 }
 
-std::string sendmsg_encrypt_route(int content_length, std::string request_body)
+HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body)
 {
-    std::string response;
+    HTTPresponse response;
+    response.error = false;
 
     // Body is just a list of recipients
     std::vector<std::string> recipients = split(request_body, "\n");
     if (recipients.size() == 0)
     {
         std::cerr << "Request body not in valid format for sendmsg_encrypt. Aborting.\n";
-        response = "Request body not in valid format for sendmsg_encrypt. Aborting.\n";
+        response.command_line = HTTP_VERSION + " 400" + " Request body not in valid format for sendmsg_encrypt.";
+        response.status_code = "400";
+        response.error = true;
         return response;
     }
 
@@ -230,20 +270,27 @@ std::string sendmsg_encrypt_route(int content_length, std::string request_body)
     {
         // TODO: Read fetched cert from tmp file
         std::string cert;
-        response = cert;
+        response.body = cert;
     }
     else
     {
-        std::cerr << "Encryption certificate could not be fetched on server end. fetch-cert failed.";
-        response = "Encryption certificate could not be fetched (fetch-cert failed).";
+        std::cerr << "Encryption certificate could not be fetched. fetch-cert failed.";
+        response.command_line = HTTP_VERSION + " 500" + " Encryption certificate could not be fetched.";
+        response.status_code = "500";
+        response.error = true;
+        return response;
     }
 
+    response.command_line = HTTP_VERSION + " 200 OK";
+    response.status_code = "200";
+    response.content_length = response.body.size();
     return response;
 }
 
-std::string sendmsg_message_route(int content_length, std::string request_body)
+HTTPresponse sendmsg_message_route(int content_length, std::string request_body)
 {
-    std::string response;
+    HTTPresponse response;
+    response.error = false;
 
     // TODO: Parse out the message and recipient from request
     std::string recipient;
@@ -252,29 +299,35 @@ std::string sendmsg_message_route(int content_length, std::string request_body)
 
     if(call_server_program("mail-in", mail_in_args) == 0)
     {
-        response = "Message successfully sent to " + recipient;
+        response.command_line = HTTP_VERSION + " 200 OK";
+        response.status_code = "200"; // No body because the no data is being sent
     }
     else
     {
         std::cerr << "Message could not be successfully delivered. mail-in failed.";
-        response = "Message could not be successfully delivered (mail-in failed).";
+        response.command_line = HTTP_VERSION + " 500" + " Message could not be successfully delivered on server end.";
+        response.status_code = "500";
+        response.error = true;
     }
 
     return response;
 }
 
-std::string recvmsg_route(int content_length, std::string request_body)
+HTTPresponse recvmsg_route(int content_length, std::string request_body)
 {
-    std::string response;
+    HTTPresponse response;
+    response.error = false;
 
     // TODO: Parse out the username from the request
     std::string username;
     std::vector<std::string> mail_out_args {username};
 
-    if (call_server_program("mail-out", mail_out_args) == 0)
+    if (call_server_program("mail-out", mail_out_args) == 1)
     {
-        std::cerr << "Message not found. mail-pass failed.";
-        response = "Message not found. (mail-out failed).";
+        std::cerr << "Message not found. mail-out failed.\n";
+        response.command_line = HTTP_VERSION + " 500" + " No messages pending on server end.";
+        response.status_code = "500";
+        response.error = true;
         return response;
     }
     else
@@ -283,6 +336,7 @@ std::string recvmsg_route(int content_length, std::string request_body)
         // TODO: Also retrieve the sender of the message from the tmp file
         std::string encrypted_msg;
         std::string sender;
+        std::string cert;
 
         // Fetch cert (contains public key to verify signature) for the sender
         std::string encryptCert = "0";
@@ -291,19 +345,23 @@ std::string recvmsg_route(int content_length, std::string request_body)
         if(call_server_program("fetch-cert", fetch_cert_args) == 0)
         {
             // TODO: Read fetched cert from tmp file
-            std::string cert;
-            response = cert;
         }
         else
         {
-            std::cerr << "Signing certificate could not be fetched on server end. fetch-cert failed.";
-            response = "Signing certificate could not be fetched (fetch-cert failed).";
+            std::cerr << "Signing certificate could not be fetched (fetch-cert failed).";
+            response.command_line = HTTP_VERSION + " 500" + " Signing certificate could not be fetched on server end.";
+            response.status_code = "500";
+            response.error = true;
+            return response;
         }
 
 
         // TODO: concatenate the encrypted_msg and cert in one nicely formatted package
-        response = "Hi I'm a placeholder for a nicely conatenated encrypted_msg and cert";
+        response.body = "Hi I'm a placeholder for a nicely conatenated encrypted_msg and cert";
     }
 
+    response.command_line = HTTP_VERSION + " 200 OK";
+    response.status_code = "200";
+    response.content_length = response.body.size();
     return response;
 }

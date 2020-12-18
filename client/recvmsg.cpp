@@ -8,6 +8,19 @@
 #include <vector>
 #include "base64.h"
 
+HTTPrequest recvmsg_request()
+{
+    HTTPrequest request;
+    return request;
+}
+
+std::vector<std::string> recvmsg_response(std::string server_response)
+{
+    std::vector<std::string> cert_msg;
+
+    return cert_msg;
+}
+
 int main()
 {
     // Read the input file (preventing overflow)

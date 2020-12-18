@@ -126,14 +126,20 @@ std::string receive_http_message(BIO *bio)
     return headers + "\r\n" + body;
 }
 
-void send_http_response(BIO *bio, const std::string& body)
+void send_http_response(BIO *bio, const HTTPresponse http_response)
 {
-    std::string response = "HTTP/1.1 200 OK\r\n";
-    response += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+    std::string response = http_response.command_line + "\r\n";
+    if ( !http_response.body.empty() )
+    {
+        response += "Content-Length: " + std::to_string(http_response.body.size()) + "\r\n";
+    }
     response += "\r\n";
 
     BIO_write(bio, response.data(), response.size());
-    BIO_write(bio, body.data(), body.size());
+    if ( !http_response.body.empty() )
+    {
+        BIO_write(bio, http_response.body.data(), http_response.body.size());
+    }
     BIO_flush(bio);
 }
 
@@ -183,11 +189,11 @@ int main()
             std::string request = my::receive_http_message(bio.get());
 
             // Do the route function
-            std::string http_response = route(request);
+            HTTPresponse http_response = route(request);
 
-            //printf("Got request:\n");
-            //printf("%s\n", request.c_str());
-            my::send_http_response(bio.get(), http_response.c_str()); // TODO: only handles one POST request, doesn't client hangs on more than one
+            printf("Got request:\n");
+            printf("%s\n", request.c_str());
+            my::send_http_response(bio.get(), http_response);
         } catch (const std::exception& ex) {
             printf("Worker exited with exception:\n%s\n", ex.what());
         }

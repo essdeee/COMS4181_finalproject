@@ -11,6 +11,7 @@
 // CONSTANTS AND MACROS
 const std::string PASSWORD_FILE = "pass.txt";
 const std::string TMP_CERT_FILE = "tmp-crt";
+const std::string HTTP_VERSION = "HTTP/1.0";
 
 std::string generateSalt() 
 {
@@ -113,10 +114,22 @@ HTTPrequest parse_request(const std::string request)
     return parsed_request;
 }
 
-std::string route(const std::string request)
+std::string parse_url(std::string url)
+{
+    // Find first occurence of ://
+    size_t found = url.find_first_of(":");
+    std::string protocol=url.substr(0,found); 
+
+    std::string url_new=url.substr(found+4); //url_new is the url excluding the https part
+    size_t found2 = url_new.find_first_of("/");
+    std::string path =url_new.substr(found2);
+    return path;
+}
+
+HTTPresponse route(const std::string request)
 {
     // HTTPS response at the end
-    std::string response;
+    HTTPresponse response;
 
     // Parse out the command line, content length, and body
     HTTPrequest parsed_request = parse_request(request);
@@ -124,7 +137,7 @@ std::string route(const std::string request)
     // Parse out the route and integer valued content length
     std::vector<std::string> first_line;
     first_line = split(parsed_request.command_line, " ");
-    std::string route = first_line[1];
+    std::string route = parse_url(first_line[1]);
 
     // Execute the program
     if(route == GETCERT_ROUTE)
@@ -138,22 +151,21 @@ std::string route(const std::string request)
     else if(route == SENDMSG_ENCRYPT_ROUTE)
     {
         response = sendmsg_encrypt_route(std::stoi(parsed_request.content_length), parsed_request.body);
-        response = SENDMSG_ENCRYPT_ROUTE + "\n";
     }
     else if(route == SENDMSG_MESSAGE_ROUTE)
     {
         response = sendmsg_message_route(std::stoi(parsed_request.content_length), parsed_request.body);
-        response = SENDMSG_MESSAGE_ROUTE + "\n";
     }
     else if(route == RECVMSG_ROUTE)
     {
         response = recvmsg_route(std::stoi(parsed_request.content_length), parsed_request.body);
-        response = RECVMSG_ROUTE + "\n";
     }
     else
     {
         std::cerr << "ERROR: Route not accepted.\n";
-        response = "Invalid route specified in HTTPS request.\n";
+        response.command_line = HTTP_VERSION + " 400" + " Invalid route specified in HTTPS request.";
+        response.status_code = "400";
+        response.error = true;
     }
 
     return response;

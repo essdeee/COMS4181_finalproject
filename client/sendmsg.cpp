@@ -8,6 +8,41 @@
 #include <vector>
 #include "base64.h"
 
+HTTPrequest sendmsg_encrypt_request(std::vector<std::string> recipients)
+{
+    HTTPrequest request;
+    request.command_line = "POST " + HTTPS_PREFIX + HOSTNAME + CHANGEPW_ROUTE + " HTTP/1.0"; // Change to POST
+    for (std::string recipient : recipients)
+    {
+        request.body += recipient + "\n";
+    }
+
+    return request;
+}
+
+std::vector<std::string> sendmsg_encrypt_response(std::string server_response)
+{
+    std::vector<std::string> encrypt_certs;
+    return encrypt_certs;
+}
+
+HTTPrequest sendmsg_message_request(std::vector<std::string> messages)
+{
+    HTTPrequest request;
+    request.command_line = "POST " + HTTPS_PREFIX + ":" + HOSTNAME + CHANGEPW_ROUTE + " HTTP/1.0"; // Change to POST
+    for (std::string message : messages)
+    {
+        request.body += message + "\n";
+    }
+
+    return request;
+}
+
+std::string sendmsg_message_response(std::string server_response)
+{
+    return server_response;
+}
+
 int main(int argc, char* argv[])
 {
     if(argc < 2)

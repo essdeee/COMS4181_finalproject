@@ -6,6 +6,7 @@
 /**************************** CONSTANTS ******************************/
 extern const std::string PASSWORD_FILE;
 extern const std::string TEMP_CRT_FILE;
+extern const std::string HTTP_VERSION;
 
 /**************************** OBJECTS ********************************/
 struct HTTPrequest
@@ -15,6 +16,15 @@ struct HTTPrequest
     std::string body;           // body that goes after the newline
 };
 
+struct HTTPresponse
+{
+    std::string command_line;   // <version> <status code> <text>
+    std::string status_code;    // 200, 400
+    int content_length;         // length of body in bytes
+    std::string body;
+    bool error;
+};
+
 /**************************** FUNCTION DECLARATIONS ******************/
 
 std::string hash_password(std::string password);
@@ -22,6 +32,6 @@ std::string hash_password(std::string password, std::string salt);
 std::vector<std::string> split(std::string str,std::string sep);
 HTTPrequest parse_request(const std::string request);
 std::string convert_to_lower(const std::string str);
-std::string route(const std::string request);
+HTTPresponse route(const std::string request);
 void write_file(std::string str, std::string filename);
 #endif
