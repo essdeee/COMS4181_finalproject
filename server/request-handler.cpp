@@ -159,43 +159,73 @@ int main()
     SSL_library_init();
     SSL_load_error_strings();
     auto ctx = my::UniquePtr<SSL_CTX>(SSL_CTX_new(SSLv23_method()));
+    auto client_auth_ctx = my::UniquePtr<SSL_CTX>(SSL_CTX_new(SSLv23_method()));
 #else
     auto ctx = my::UniquePtr<SSL_CTX>(SSL_CTX_new(TLS_method()));
+    auto client_auth_ctx = my::UniquePtr<SSL_CTX>(SSL_CTX_new(TLS_method()));
     SSL_CTX_set_min_proto_version(ctx.get(), TLS1_2_VERSION);
+    SSL_CTX_set_min_proto_version(client_auth_ctx.get(), TLS1_2_VERSION);
 #endif
 
-    if (SSL_CTX_use_certificate_file(ctx.get(), "web_server.cert.pem", SSL_FILETYPE_PEM) <= 0) {
+    // Load the server certificate and private key
+    if (SSL_CTX_use_certificate_file(ctx.get(), SERVER_CERT.c_str(), SSL_FILETYPE_PEM) <= 0) {
         my::print_errors_and_exit("Error loading server certificate");
     }
-    if (SSL_CTX_use_PrivateKey_file(ctx.get(), "web_server.key.pem", SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_PrivateKey_file(ctx.get(), SERVER_PRIVATE_KEY.c_str(), SSL_FILETYPE_PEM) <= 0) {
         my::print_errors_and_exit("Error loading server private key");
     }
 
-    auto accept_bio = my::UniquePtr<BIO>(BIO_new_accept("8080"));
+    /*
+    // Load the server certificate and private key for client auth
+    if (SSL_CTX_use_certificate_file(client_auth_ctx.get(), SERVER_CERT.c_str(), SSL_FILETYPE_PEM) <= 0) {
+        my::print_errors_and_exit("Error loading server certificate");
+    }
+    if (SSL_CTX_use_PrivateKey_file(client_auth_ctx.get(), SERVER_PRIVATE_KEY.c_str(), SSL_FILETYPE_PEM) <= 0) {
+        my::print_errors_and_exit("Error loading server private key");
+    }
+    */
+
+    // Bind to port
+    auto accept_bio = my::UniquePtr<BIO>(BIO_new_accept("8080")); // 443 is reserved for root
+    // auto client_auth_accept_bio = my::UniquePtr<BIO>(BIO_new_accept("8083")); // 443 is reserved for root
     if (BIO_do_accept(accept_bio.get()) <= 0) {
         my::print_errors_and_exit("Error in BIO_do_accept (binding to port 8080)");
     }
+    /*
+    if (BIO_do_accept(client_auth_accept_bio.get()) <= 0) {
+        my::print_errors_and_exit("Error in BIO_do_accept (binding to port 4432)");
+    }
+    */
 
     static auto shutdown_the_socket = [fd = BIO_get_fd(accept_bio.get(), nullptr)]() {
         close(fd);
     };
     signal(SIGINT, [](int) { shutdown_the_socket(); });
 
-    while (auto bio = my::accept_new_tcp_connection(accept_bio.get())) {
-        bio = std::move(bio)
-            | my::UniquePtr<BIO>(BIO_new_ssl(ctx.get(), 0))
-            ;
-        try {
-            std::string request = my::receive_http_message(bio.get());
+    // Listen for new connections
+    while (1) 
+    {
+        if(auto bio = my::accept_new_tcp_connection(accept_bio.get()))
+        {
+            bio = std::move(bio)
+                | my::UniquePtr<BIO>(BIO_new_ssl(ctx.get(), 0))
+                ;
+            try {
+                std::string request = my::receive_http_message(bio.get());
 
-            // Do the route function
-            HTTPresponse http_response = route(request);
+                // Do the route function
+                HTTPresponse http_response = route(request);
 
-            printf("Got request:\n");
-            printf("%s\n", request.c_str());
-            my::send_http_response(bio.get(), http_response);
-        } catch (const std::exception& ex) {
-            printf("Worker exited with exception:\n%s\n", ex.what());
+                printf("Got request:\n");
+                printf("%s\n", request.c_str());
+                my::send_http_response(bio.get(), http_response);
+            } catch (const std::exception& ex) {
+                printf("Worker exited with exception:\n%s\n", ex.what());
+            }
+        }
+        else
+        {
+            break;
         }
     }
     printf("\nClean exit!\n");

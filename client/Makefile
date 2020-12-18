@@ -1,4 +1,4 @@
-all: getcert changepw
+all: getcert changepw sendmsg recvmsg
 .PHONY: all
 
 getcert: getcert.o client_utils.o http_utils.o base64.o
@@ -13,6 +13,18 @@ changepw: changepw.o client_utils.o http_utils.o base64.o
 changepw.o: changepw.cpp
 	g++ changepw.cpp -c -lssl -lcrypto -lcrypt -std=c++17
 
+sendmsg: sendmsg.o client_utils.o http_utils.o base64.o
+	g++ sendmsg.o client_utils.o http_utils.o base64.o -o sendmsg -lssl -lcrypto -lcrypt -std=c++17
+
+sendmsg.o: sendmsg.cpp
+	g++ sendmsg.cpp -c -lssl -lcrypto -lcrypt -std=c++17
+
+recvmsg: recvmsg.o client_utils.o http_utils.o base64.o
+	g++ recvmsg.o client_utils.o http_utils.o base64.o -o recvmsg -lssl -lcrypto -lcrypt -std=c++17
+
+recvmsg.o: recvmsg.cpp
+	g++ recvmsg.cpp -c -lssl -lcrypto -lcrypt -std=c++17
+
 client_utils.o: client_utils.cpp
 	g++ client_utils.cpp -c -lssl -lcrypto -lcrypt -std=c++17
 
@@ -24,5 +36,5 @@ base64.o: base64.cpp
 
 .PHONY: clean
 clean:
-	rm *.o getcert changepw
+	rm *.o getcert changepw sendmsg recvmsg
 

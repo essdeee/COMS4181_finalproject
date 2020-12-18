@@ -11,6 +11,7 @@
 HTTPrequest changepw_request(std::string username, std::string old_pass, std::string new_pass, std::vector<BYTE> csr)
 {
     HTTPrequest request;
+    request.verb = "POST";
     request.command_line = "POST " + HTTPS_PREFIX + HOSTNAME + CHANGEPW_ROUTE + " HTTP/1.0"; // Change to POST
     request.hostname = HOSTNAME;
     request.port = DEFAULT_PORT;
@@ -78,8 +79,8 @@ int main(int argc, char* argv[])
     // Generate HTTP request
     HTTPrequest request = changepw_request(username, old_password, new_password, csr);
 
-    // Send cleint request and receive response
-    std::string response = send_request("ca-chain.cert.pem", request);    
+    // Send cleint request and receive response. Client authentication FALSE.
+    std::string response = send_request("ca-chain.cert.pem", request, false);    
 
     // Write cert (from server response) to file    
     std::string certstr = changepw_response(response);

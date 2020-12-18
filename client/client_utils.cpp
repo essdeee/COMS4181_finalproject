@@ -12,6 +12,7 @@
 
 /**************************** CONSTANTS ******************************/
 const std::string SAVE_CERT_PATH = "client.pem";
+const std::string PRIVATE_KEY_PATH = "private_key";
 
 /**************************** FUNCTIONS ******************************/
 void print_hex(const BYTE* byte_arr, int len)

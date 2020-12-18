@@ -8,6 +8,7 @@
 /**************************** CONSTANTS ******************************/
 #define USERNAME_MAX 255
 extern const std::string SAVE_CERT_PATH;
+extern const std::string PRIVATE_KEY_PATH;
 
 /**************************** DATA TYPES ****************************/
 typedef uint8_t BYTE;            // 8-bit byte

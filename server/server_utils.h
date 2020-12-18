@@ -5,8 +5,10 @@
 
 /**************************** CONSTANTS ******************************/
 extern const std::string PASSWORD_FILE;
-extern const std::string TEMP_CRT_FILE;
+extern const std::string TMP_CERT_FILE;
 extern const std::string HTTP_VERSION;
+extern const std::string SERVER_CERT;
+extern const std::string SERVER_PRIVATE_KEY;
 
 /**************************** OBJECTS ********************************/
 struct HTTPrequest
@@ -19,7 +21,7 @@ struct HTTPrequest
 struct HTTPresponse
 {
     std::string command_line;   // <version> <status code> <text>
-    std::string status_code;    // 200, 400
+    std::string status_code;    // 200, 400, 500
     int content_length;         // length of body in bytes
     std::string body;
     bool error;

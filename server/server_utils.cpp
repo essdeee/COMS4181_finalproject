@@ -12,6 +12,8 @@
 const std::string PASSWORD_FILE = "pass.txt";
 const std::string TMP_CERT_FILE = "tmp-crt";
 const std::string HTTP_VERSION = "HTTP/1.0";
+const std::string SERVER_CERT = "web_server.cert.pem";
+const std::string SERVER_PRIVATE_KEY = "web_server.key.pem";
 
 std::string generateSalt() 
 {
@@ -137,7 +139,15 @@ HTTPresponse route(const std::string request)
     // Parse out the route and integer valued content length
     std::vector<std::string> first_line;
     first_line = split(parsed_request.command_line, " ");
+    std::string verb = first_line[0];
     std::string route = parse_url(first_line[1]);
+    std::string username;
+    if ( verb == "GET" && route.find_first_of("?") != std::string::npos)
+    {
+        std::vector<std::string> route_username = split(route, "?");
+        route = route_username[0];
+        username = route_username[1];
+    }
 
     // Execute the program
     if(route == GETCERT_ROUTE)
@@ -156,9 +166,9 @@ HTTPresponse route(const std::string request)
     {
         response = sendmsg_message_route(std::stoi(parsed_request.content_length), parsed_request.body);
     }
-    else if(route == RECVMSG_ROUTE)
+    else if(route == RECVMSG_ROUTE && !username.empty())
     {
-        response = recvmsg_route(std::stoi(parsed_request.content_length), parsed_request.body);
+        response = recvmsg_route(username);
     }
     else
     {

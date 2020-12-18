@@ -8,47 +8,70 @@
 #include <vector>
 #include "base64.h"
 
-HTTPrequest recvmsg_request()
+HTTPrequest recvmsg_request(std::string username)
 {
     HTTPrequest request;
+    request.verb = "GET";
+    request.command_line = "GET " + HTTPS_PREFIX + HOSTNAME + RECVMSG_ROUTE + "?" + username + " HTTP/1.0"; 
+    request.hostname = HOSTNAME;
+    request.port = DEFAULT_PORT;
     return request;
 }
 
 std::vector<std::string> recvmsg_response(std::string server_response)
 {
     std::vector<std::string> cert_msg;
+    
+    // Parse and get error code if there is one
+    HTTPresponse response = parse_http_response(server_response);
+    std::string response_string;
+
+    // Handle error codes with response.valid
+    if(response.valid)
+    {
+        // Check if cert is the only thing in the body
+        std::vector<std::string> split_body = split(response.body, "\n");
+        if(split_body.empty() || split_body.size() != 2)
+        {
+            cert_msg.push_back("!Server body improperly formatted. There should be two parts: cert and message.");
+            return cert_msg;
+        }
+        else
+        {
+            for( std::string cert : split_body )
+            {
+                cert_msg.push_back(cert);
+            }
+        }
+    }
+    else
+    {
+        cert_msg.push_back("!" + response.error_msg);
+    }
 
     return cert_msg;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    // Read the input file (preventing overflow)
-    std::string line;
-    std::vector<std::string> lines;
-    while (std::getline(std::cin, line))
+    if(argc != 2)
     {
-        if (line.empty())
-        {
-            lines.push_back("\n");
-        }
-        else
-        {
-            lines.push_back(line + "\n"); // getline removes newline
-        }
+        std::cerr << "recvmsg takes in one argument: the username.\n";
+        return 1;
     }
 
-    // (1) Generate recvmsg HTTP request (nothing in body, GET request)
-    HTTPrequest request = recvmsg_request();
+    // Generate recvmsg HTTP request (nothing in body, GET request)
+    std::string username = argv[1];
+    HTTPrequest request = recvmsg_request(username);
 
-    // Send cleint request and receive response
-    std::string response = send_request("ca-chain.cert.pem", request); // Must be client-auth
+    // Send client request and receive response
+    std::string response = send_request("ca-chain.cert.pem", request, false); // Must be client-auth
     
     // Get back (1) certificate from the sender (to verify signature) (2) the encrypted message
     std::vector<std::string> cert_msg = recvmsg_response(response);
-    if ( cert_msg.size() != 2)
+    if ( cert_msg.size() == 1 || cert_msg.empty() || cert_msg[0][0] == '!')
     {
-        std::cerr << "Server response for recvmsg improperly formatted. Aborting.\n";
+        std::cerr << cert_msg[0].substr(1) << std::endl;
         return 1;
     }
 

@@ -249,6 +249,7 @@ HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body)
 {
     HTTPresponse response;
     response.error = false;
+    response.body = "";
 
     // Body is just a list of recipients
     std::vector<std::string> recipients = split(request_body, "\n");
@@ -261,24 +262,37 @@ HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body)
         return response;
     }
 
-    // TODO: Parse out the recipient from request
-    std::string recipient;
-    std::string encryptCert = FETCH_ENCRYPT_CERT;
-    std::vector<std::string> fetch_cert_args {recipient, encryptCert};
+    // For each recipient, fetch the encryption certificate
+    for (std::string recipient : recipients)
+    {
+        std::string encryptCert = FETCH_ENCRYPT_CERT;
+        std::vector<std::string> fetch_cert_args {recipient, encryptCert};
 
-    if(call_server_program("fetch-cert", fetch_cert_args) == 0)
-    {
-        // TODO: Read fetched cert from tmp file
-        std::string cert;
-        response.body = cert;
-    }
-    else
-    {
-        std::cerr << "Encryption certificate could not be fetched. fetch-cert failed.";
-        response.command_line = HTTP_VERSION + " 500" + " Encryption certificate could not be fetched.";
-        response.status_code = "500";
-        response.error = true;
-        return response;
+        if(call_server_program("fetch-cert", fetch_cert_args) == 0)
+        {
+            std::string cert;
+            std::ifstream infile("tmp-crt");
+            infile >> cert;
+
+            if( remove( "tmp-crt" ) != 0 )
+            {
+                std::cerr << "Error deleting tmp file. getcert failed on server end. Aborting.\n";
+                response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
+                response.status_code = "500";
+                response.error = true;
+                return response;
+            }
+
+            response.body += cert + "\n";
+        }
+        else
+        {
+            std::cerr << "Encryption certificate could not be fetched. fetch-cert failed.";
+            response.command_line = HTTP_VERSION + " 500" + " Encryption certificate could not be fetched for user: " + recipient;
+            response.status_code = "500";
+            response.error = true;
+            return response;
+        }
     }
 
     response.command_line = HTTP_VERSION + " 200 OK";
@@ -292,36 +306,60 @@ HTTPresponse sendmsg_message_route(int content_length, std::string request_body)
     HTTPresponse response;
     response.error = false;
 
-    // TODO: Parse out the message and recipient from request
-    std::string recipient;
-    std::string message;
-    std::vector<std::string> mail_in_args {recipient, message};
-
-    if(call_server_program("mail-in", mail_in_args) == 0)
+    // Split body of request into vector of {recipients, msg1, msg2, ... msg_n}
+    std::vector<std::string> request_body_split = split(request_body, "\n");
+    if(request_body_split.size() < 2)
     {
-        response.command_line = HTTP_VERSION + " 200 OK";
-        response.status_code = "200"; // No body because the no data is being sent
-    }
-    else
-    {
-        std::cerr << "Message could not be successfully delivered. mail-in failed.";
-        response.command_line = HTTP_VERSION + " 500" + " Message could not be successfully delivered on server end.";
-        response.status_code = "500";
+        std::cerr << "Request body not in valid format for sendmsg_message. Aborting.\n";
+        response.command_line = HTTP_VERSION + " 400" + " Request body not in valid format for sendmsg_message.";
+        response.status_code = "400";
         response.error = true;
+        return response;
     }
 
+    // Parse out the recipients and the corresponding messages
+    std::vector<std::string> recipients;
+    std::vector<std::string> messages;
+    std::string unparsed_recipients = request_body_split[0];
+    recipients = split(unparsed_recipients, ":");
+    request_body_split.erase(request_body_split.begin());
+    messages = request_body_split;
+
+    if ( recipients.size() != messages.size() )
+    {
+        std::cerr << "Number of recipients does not match number of messages. Invalid client request.\n";
+        response.command_line = HTTP_VERSION + " 400" + " Number of recipients does not match number of messages.";
+        response.status_code = "400";
+        response.error = true;
+        return response;
+    }
+
+    for ( int i = 0; i < recipients.size(); i++ )
+    {
+        std::vector<std::string> mail_in_args {recipients[i], messages[i]};
+
+        if(call_server_program("mail-in", mail_in_args) != 0)
+        {
+            std::cerr << "Message could not be successfully delivered. mail-in failed.\n";
+            response.command_line = HTTP_VERSION + " 500" + " Message could not be successfully delivered on server end.";
+            response.status_code = "500";
+            response.error = true;
+            return response;
+        }
+    }
+
+    response.command_line = HTTP_VERSION + " 200 OK";
+    response.status_code = "200"; // No body because no data is being sent
+    response.content_length = 0;
     return response;
 }
 
-HTTPresponse recvmsg_route(int content_length, std::string request_body)
+HTTPresponse recvmsg_route(std::string username)
 {
     HTTPresponse response;
     response.error = false;
 
-    // TODO: Parse out the username from the request
-    std::string username;
     std::vector<std::string> mail_out_args {username};
-
     if (call_server_program("mail-out", mail_out_args) == 1)
     {
         std::cerr << "Message not found. mail-out failed.\n";
@@ -332,19 +370,46 @@ HTTPresponse recvmsg_route(int content_length, std::string request_body)
     }
     else
     {
-        // TODO: Read retrieved message from tmp file
-        // TODO: Also retrieve the sender of the message from the tmp file
+        // mail-out returned 0, so we can read the msg from the tmp file tmp-msg
+        std::string msg;
         std::string encrypted_msg;
         std::string sender;
         std::string cert;
 
+        // Read the message from tmp file
+        std::ifstream msgstream("tmp-msg");
+        msgstream >> msg;
+        if( remove( "tmp-msg" ) != 0 )
+        {
+            std::cerr << "Error deleting tmp file. mail-out failed on server end. Aborting.\n";
+            response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
+            response.status_code = "500";
+            response.error = true;
+            return response;
+        }
+
+        // Parse out the sender and the message
+        size_t newline = msg.find_first_of("\n");
+        sender = msg.substr(0, newline);
+        encrypted_msg = msg.substr(newline + 1); 
+
         // Fetch cert (contains public key to verify signature) for the sender
-        std::string encryptCert = "0";
+        std::string encryptCert = "sign";
         std::vector<std::string> fetch_cert_args {sender, encryptCert};
 
         if(call_server_program("fetch-cert", fetch_cert_args) == 0)
         {
-            // TODO: Read fetched cert from tmp file
+            std::ifstream infile("tmp-crt");
+            infile >> cert;
+
+            if( remove( "tmp-crt" ) != 0 )
+            {
+                std::cerr << "Error deleting tmp file. fetch-cert failed on server end. Aborting.\n";
+                response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
+                response.status_code = "500";
+                response.error = true;
+                return response;
+            }
         }
         else
         {
@@ -355,9 +420,8 @@ HTTPresponse recvmsg_route(int content_length, std::string request_body)
             return response;
         }
 
-
-        // TODO: concatenate the encrypted_msg and cert in one nicely formatted package
-        response.body = "Hi I'm a placeholder for a nicely conatenated encrypted_msg and cert";
+        response.body += cert + "\n";
+        response.body += encrypted_msg;
     }
 
     response.command_line = HTTP_VERSION + " 200 OK";

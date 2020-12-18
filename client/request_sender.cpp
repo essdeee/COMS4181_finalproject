@@ -129,13 +129,18 @@ void send_http_request(BIO *bio, const HTTPrequest request_obj)
 {
     // Header
     std::string request = request_obj.command_line + "\r\n";
-    request += "Content-Length: " + request_obj.content_length + "\r\n";
+    if(request_obj.verb == "POST")
+    {
+        request += "Content-Length: " + request_obj.content_length + "\r\n";
+    }
     request += "\r\n";
 
     // Body
-    request += request_obj.body;
-
-    //std::cout << request << std::endl;
+    if(request_obj.verb == "POST")
+    {
+        request += request_obj.body;
+    }
+    
     BIO_write(bio, request.data(), request.size());
     BIO_flush(bio);
 }
@@ -177,7 +182,7 @@ void verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
 
 } // namespace my
 
-std::string send_request(std::string chain_file, HTTPrequest request)
+std::string send_request(std::string chain_file, HTTPrequest request, bool client_auth)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_library_init();
@@ -191,10 +196,24 @@ std::string send_request(std::string chain_file, HTTPrequest request)
 #else
     auto ctx = my::UniquePtr<SSL_CTX>(SSL_CTX_new(TLS_client_method()));
 #endif
+
+    if(client_auth)
+    {
+        // For client-authenticated mTLS connection, load certificate and private key
+        if (SSL_CTX_use_certificate_file(ctx.get(), SAVE_CERT_PATH.c_str(), SSL_FILETYPE_PEM) <= 0) {
+            my::print_errors_and_exit("Error loading client certificate");
+        }
+        if (SSL_CTX_use_PrivateKey_file(ctx.get(), PRIVATE_KEY_PATH.c_str(), SSL_FILETYPE_PEM) <= 0) {
+            my::print_errors_and_exit("Error loading client private key");
+        }
+    }
+    
+    // Verify the CA chain to verify the server
     if (SSL_CTX_load_verify_locations(ctx.get(), chain_file.c_str(), nullptr) != 1) {
         my::print_errors_and_exit("Error setting up trust store");
     }
 
+    // Connect to server given hostname and port 
     auto bio = my::UniquePtr<BIO>(BIO_new_connect((request.hostname + ":" + request.port).c_str()));
     if (bio == nullptr) {
         my::print_errors_and_exit("Error in BIO_new_connect");
@@ -209,9 +228,12 @@ std::string send_request(std::string chain_file, HTTPrequest request)
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
     SSL_set1_host(my::get_ssl(ssl_bio.get()), request.hostname.c_str());
 #endif
+
+    // TLS handshake
     if (BIO_do_handshake(ssl_bio.get()) <= 0) {
         my::print_errors_and_exit("Error in BIO_do_handshake");
     }
+    // Verify the server's certificate
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), request.hostname.c_str());
 
     my::send_http_request(ssl_bio.get(), request);

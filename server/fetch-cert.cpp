@@ -23,11 +23,11 @@ int load_cert(const char *filepath, X509 **crt)
 	*crt = PEM_read_bio_X509(bio, NULL, NULL, NULL);
 	if (!*crt) goto free;
 	BIO_free_all(bio);
-	return 1;
+	return 0;
 free:
 	BIO_free_all(bio);
 	X509_free(*crt);
-	return 0;
+	return 1;
 }
 
 void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size)
@@ -45,20 +45,33 @@ void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size)
 int main( int argc, const char* argv[] )
 {
 	if(argc == 3)
-        {
+    {
 		std::string username = argv[1];
 		std::string cert_type = argv[2];
 		X509 *crt = NULL;
-		std::string cert_filename = NULL;
-		if(cert_type == "sign"){
+		std::string cert_filename;
+
+		if(cert_type == "sign")
+		{
 			cert_filename = "sign.pem";
 		}
-
-		else if(cert_type == "encrypt"){
+		else if(cert_type == "encrypt")
+		{
 			cert_filename = "encrypt.pem";
 		}
+		else
+		{
+			std::cerr << "fetch-cert received invalid cert_type argument.\n";
+			return 1;
+		}
+		
 		std::string cert_path = username + "/" + cert_filename;
-		load_cert(cert_path.c_str(), &crt);
+		if (load_cert(cert_path.c_str(), &crt))
+		{
+			std::cerr << "fetch-cert could not load the certificate for user: " + username << std::endl;
+			return 1;
+		}
+
 		uint8_t *crt_bytes = NULL;
 		size_t crt_size = 0;
 		crt_to_pem(crt, &crt_bytes, &crt_size);
@@ -67,8 +80,8 @@ int main( int argc, const char* argv[] )
 		write_file(crt_str, "tmp-crt");
 	}
 	else
-        {
-                std::cerr << "fetch-cert received invalid number of arguments.\n";
-                return 1;
-        }
+	{
+			std::cerr << "fetch-cert received invalid number of arguments.\n";
+			return 1;
+	}
 }

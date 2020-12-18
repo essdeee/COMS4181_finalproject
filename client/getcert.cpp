@@ -11,6 +11,7 @@
 HTTPrequest getcert_request(std::string username, std::string password, std::vector<BYTE> csr)
 {
     HTTPrequest request;
+    request.verb = "POST";
     request.command_line = "POST " + HTTPS_PREFIX + HOSTNAME + GETCERT_ROUTE + " HTTP/1.0"; // Change to POST 
     request.hostname = HOSTNAME;
     request.port = DEFAULT_PORT;
@@ -75,8 +76,8 @@ int main(int argc, char* argv[])
     // Generate HTTP request
     HTTPrequest request = getcert_request(username, password, csr);
 
-    // Send cleint request and receive response
-    std::string response = send_request("ca-chain.cert.pem", request);
+    // Send client request and receive response. Client authentication FALSE.
+    std::string response = send_request("ca-chain.cert.pem", request, false);
     
     // Parse out the cert from the server response
     std::string certstr = getcert_response(response);

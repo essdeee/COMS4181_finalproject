@@ -25,6 +25,6 @@ HTTPresponse getcert_route(int content_length, std::string request_body);
 HTTPresponse changepw_route(int content_length, std::string request_body);
 HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body);
 HTTPresponse sendmsg_message_route(int content_length, std::string request_body);
-HTTPresponse recvmsg_route(int content_length, std::string request_body);
+HTTPresponse recvmsg_route(std::string username);
 
 #endif

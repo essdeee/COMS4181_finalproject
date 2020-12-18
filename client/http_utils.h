@@ -16,6 +16,7 @@ extern const std::string DEFAULT_PORT;
 /**************************** OBJECTS *******************************/
 struct HTTPrequest
 {
+    std::string verb;
     std::string command_line;    // <verb> <url> <version>
     std::string content_length; // "Content-Length" is the only nonempty <option-line>
     std::string body;           // body that goes after the newline

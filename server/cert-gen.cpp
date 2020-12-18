@@ -130,6 +130,7 @@ void print_bytes(uint8_t *data, size_t size)
 
 int main(int argc, char *argv[])
 {
+	// TODO: Will require passing in username as argument to save to the correct folder
 	if(argc == 2)
 	{
 		//read first arg and decode as X509_REQ
@@ -174,7 +175,8 @@ int main(int argc, char *argv[])
 		}
 
 		BIO *out = NULL, *bio_err = NULL;
-		//todo this will be folder with cert
+		//TODO: this will be folder with cert i.e. addleness/sign.pem
+		// Will require passing in username as argument
 		const char  *cPath = "client.pem";
 		out = BIO_new_file(cPath,"w");
 		ret = PEM_write_bio_X509(out, crt);
@@ -186,7 +188,7 @@ int main(int argc, char *argv[])
 		crt_to_pem(crt, &crt_bytes, &crt_size);
 		
 		std::string crt_str = base64_encode(crt_bytes, crt_size);
-		write_file(crt_str, "tmp-crt");
+		write_file(crt_str, TMP_CERT_FILE);
 		
 		/* Print key and certificate. */
 		//print_bytes(crt_bytes, crt_size);
