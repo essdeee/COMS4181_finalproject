@@ -4,11 +4,19 @@
 #include <vector>
 
 /**************************** CONSTANTS ******************************/
+#define MAILBOX_NAME_MAX 255
+#define MAIL_OUT_MSG_FOUND 0
+#define MAIL_OUT_EMPTY 1
+#define MAIL_OUT_ERROR 2
+
 extern const std::string PASSWORD_FILE;
 extern const std::string TMP_CERT_FILE;
+extern const std::string TMP_MSG_FILE;
 extern const std::string HTTP_VERSION;
 extern const std::string SERVER_CERT;
 extern const std::string SERVER_PRIVATE_KEY;
+extern const std::string MAIL_OUT_REMOVE;
+extern const std::string MAIL_OUT_KEEP;
 
 /**************************** OBJECTS ********************************/
 struct HTTPrequest
@@ -35,5 +43,12 @@ std::vector<std::string> split(std::string str,std::string sep);
 HTTPrequest parse_request(const std::string request);
 std::string convert_to_lower(const std::string str);
 HTTPresponse route(const std::string request);
+bool validMailboxChars(const std::string &str);
+bool doesMailboxExist(const std::string &s);
+std::string getNextNumber(const std::string &mailbox_name);
+std::string getEarliestNumberPath(const std::string &mailbox_name);
+bool isMailboxEmpty(const std::string &mailbox_name);
+std::string newMailPath(const std::string &mailbox_name, const std::string &file_name);
+bool isNumeric(const std::string &str);
 void write_file(std::string str, std::string filename);
 #endif

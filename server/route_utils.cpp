@@ -46,9 +46,8 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         return 1;
     }
     else if (p == 0)
-    {
+    {                
         // Child process
-        close(pipe_fd[0]);               // Close the reading end of the pipe
         close(pipe_fd[1]);               // Close the writing end of the pipe
         close(STDIN_FILENO);             // Close the current stdin 
         dup2(pipe_fd[0], STDIN_FILENO);  // Replace stdin with the reading end of the pipe
@@ -58,35 +57,45 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         {
             // arg[0] = username
             // arg[1] = password
+            close(pipe_fd[0]);               // Close the reading end of the pipe
             status = execl(VERIFY_PASS_PATH.c_str(), VERIFY_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "update-pass" )
         {
+            close(pipe_fd[0]);               // Close the reading end of the pipe
             status = execl(UPDATE_PASS_PATH.c_str(), UPDATE_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "cert-gen" )
         {
             // arg[0] = csr string
+            close(pipe_fd[0]);               // Close the reading end of the pipe
             status = execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str(), NULL);
         }
         else if ( program_name == "fetch-cert" )
         {
+            close(pipe_fd[0]);               // Close the reading end of the pipe
             status = execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "mail-out" )
         {
-            status = execl(MAIL_OUT_PATH.c_str(), MAIL_OUT_PATH.c_str(), args[0].c_str(), NULL);
+            close(pipe_fd[0]);               // Close the reading end of the pipe
+            status = execl(MAIL_OUT_PATH.c_str(), MAIL_OUT_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "mail-in" )
         {
-            status = execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
+            status = execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), NULL);
         }
     } 
     else 
     {
         // Parent process
         close(pipe_fd[0]); // Close the reading end of the pipe
+        if ( program_name == "mail-in")
+        {   
+            write(pipe_fd[1], args[1].c_str(), strlen(args[1].c_str()) + 1);
+        }
         close(pipe_fd[1]); // Close the writing end of the pipe
+        
         p = wait(&status);
     }
 
@@ -122,11 +131,11 @@ HTTPresponse getcert_route(int content_length, std::string request_body)
         {
             // Read newly created certificate from tmp file
             std::string cert; // Placeholder for now
-            std::ifstream infile("tmp-crt");
+            std::ifstream infile(TMP_CERT_FILE);
             infile >> cert;
             response.body = cert;
 
-            if( remove( "tmp-crt" ) != 0 )
+            if( remove( TMP_CERT_FILE.c_str() ) != 0 )
             {
                 std::cerr << "Error deleting tmp file. getcert failed on server end. Aborting.\n";
                 response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
@@ -190,12 +199,20 @@ HTTPresponse changepw_route(int content_length, std::string request_body)
         return response;
     }
     
-    std::vector<std::string> mail_out_args {username};
-
-    if (call_server_program("mail-out", mail_out_args) == 0)
+    std::vector<std::string> mail_out_args {username, MAIL_OUT_KEEP};
+    int mail_out_return = call_server_program("mail-out", mail_out_args);
+    if (mail_out_return == MAIL_OUT_MSG_FOUND)
     {
         std::cerr << "Message still found in inbox. Password cannot be updated yet.\n";
         response.command_line = HTTP_VERSION + " 500" + " Password cannot be updated yet; use recvmsg to download pending message(s).";
+        response.status_code = "500";
+        response.error = true;
+        return response;
+    }
+    else if (mail_out_return == MAIL_OUT_ERROR)
+    {
+        std::cerr << "mail-out failed because of internal error.\n";
+        response.command_line = HTTP_VERSION + " 500" + " Mail delivery failed because internal error.";
         response.status_code = "500";
         response.error = true;
         return response;
@@ -216,11 +233,11 @@ HTTPresponse changepw_route(int content_length, std::string request_body)
     if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
     {
         std::string cert;
-        std::ifstream infile("tmp-crt");
+        std::ifstream infile(TMP_CERT_FILE);
         infile >> cert;
         response.body = cert;
 
-        if( remove( "tmp-crt" ) != 0 )
+        if( remove( TMP_CERT_FILE.c_str() ) != 0 )
         {
             std::cerr << "Error deleting tmp file. getcert failed on server end. Aborting.\n";
             response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
@@ -271,10 +288,10 @@ HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body)
         if(call_server_program("fetch-cert", fetch_cert_args) == 0)
         {
             std::string cert;
-            std::ifstream infile("tmp-crt");
+            std::ifstream infile(TMP_CERT_FILE);
             infile >> cert;
 
-            if( remove( "tmp-crt" ) != 0 )
+            if( remove( TMP_CERT_FILE.c_str() ) != 0 )
             {
                 std::cerr << "Error deleting tmp file. getcert failed on server end. Aborting.\n";
                 response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
@@ -359,11 +376,20 @@ HTTPresponse recvmsg_route(std::string username)
     HTTPresponse response;
     response.error = false;
 
-    std::vector<std::string> mail_out_args {username};
-    if (call_server_program("mail-out", mail_out_args) == 1)
+    std::vector<std::string> mail_out_args {username, MAIL_OUT_REMOVE};
+    int mail_out_return = call_server_program("mail-out", mail_out_args);
+    if (mail_out_return == MAIL_OUT_EMPTY)
     {
         std::cerr << "Message not found. mail-out failed.\n";
         response.command_line = HTTP_VERSION + " 500" + " No messages pending on server end.";
+        response.status_code = "500";
+        response.error = true;
+        return response;
+    }
+    else if (mail_out_return == MAIL_OUT_ERROR)
+    {
+        std::cerr << "mail-out failed because of internal error.\n";
+        response.command_line = HTTP_VERSION + " 500" + " Mail delivery failed because internal error.";
         response.status_code = "500";
         response.error = true;
         return response;
@@ -377,9 +403,9 @@ HTTPresponse recvmsg_route(std::string username)
         std::string cert;
 
         // Read the message from tmp file
-        std::ifstream msgstream("tmp-msg");
+        std::ifstream msgstream(TMP_MSG_FILE);
         msgstream >> msg;
-        if( remove( "tmp-msg" ) != 0 )
+        if( remove( TMP_MSG_FILE.c_str() ) != 0 )
         {
             std::cerr << "Error deleting tmp file. mail-out failed on server end. Aborting.\n";
             response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
@@ -399,10 +425,10 @@ HTTPresponse recvmsg_route(std::string username)
 
         if(call_server_program("fetch-cert", fetch_cert_args) == 0)
         {
-            std::ifstream infile("tmp-crt");
+            std::ifstream infile(TMP_CERT_FILE);
             infile >> cert;
 
-            if( remove( "tmp-crt" ) != 0 )
+            if( remove( TMP_CERT_FILE.c_str() ) != 0 )
             {
                 std::cerr << "Error deleting tmp file. fetch-cert failed on server end. Aborting.\n";
                 response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";

@@ -7,13 +7,19 @@
 #include <bits/stdc++.h> 
 #include "server_utils.h"
 #include "route_utils.h"
+#include <sys/stat.h>
+namespace fs = std::filesystem;
 
 // CONSTANTS AND MACROS
 const std::string PASSWORD_FILE = "pass.txt";
 const std::string TMP_CERT_FILE = "tmp-crt";
+const std::string TMP_MSG_FILE = "tmp-msg";
 const std::string HTTP_VERSION = "HTTP/1.0";
 const std::string SERVER_CERT = "web_server.cert.pem";
 const std::string SERVER_PRIVATE_KEY = "web_server.key.pem";
+const std::string MAILBOX_PREFIX = "./mail/";
+const std::string MAIL_OUT_REMOVE = "remove";
+const std::string MAIL_OUT_KEEP = "keep";
 
 std::string generateSalt() 
 {
@@ -70,6 +76,55 @@ std::string convert_to_lower(const std::string str)
     }
 
     return converted_str;
+}
+
+/*
+Input: (std::string) A string.
+Output: (boolean) Whether a string's characters are all valid mailbox chars.
+Checks whether characters are included in upper and lower case letters, digits, +, -, and _
+*/
+bool validMailboxChars(const std::string &str)
+{    
+    if (str.empty())
+    {
+        return false;
+    }
+
+    // First character must be alphabetic
+    if (!std::isalpha(str[0]))
+    {
+        return false;
+    }
+
+    for(char const &c : str)
+    {
+        if (!std::isalpha(c) && 
+        !std::isdigit(c) && 
+        c != '+' && c != '-' && c != '_')
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/* 
+Input: (std::string) Mailbox name.
+Output: (bool) Whether mailbox directory exists in system or not.
+Checks if mailbox path exists (used by mail-out)
+*/
+bool doesMailboxExist(const std::string &s)
+{
+    // Must check valid mailbox characters first
+    if ( !validMailboxChars(s) )
+    {
+        return false;
+    }
+
+    std::string mailbox_path = MAILBOX_PREFIX + s;
+    struct stat buffer;
+    return (stat (mailbox_path.c_str(), &buffer) == 0);
 }
 
 HTTPrequest parse_request(const std::string request)
@@ -186,4 +241,187 @@ void write_file(std::string str, std::string filename)
 	std::ofstream file(filename);
   	file << str;
 	file.close();
+}
+
+/* 
+Input:  (std::string) Mailbox name.
+Output: (std::string) Next message name in current mailbox.
+Checks the current highest numbering of the messages in the mailbox
+and returns the next number.
+*/
+std::string get_stem(const fs::path &p) { return (p.stem().string()); }
+std::string getNextNumber(const std::string &mailbox_name)
+{
+    std::string mail_prefix = MAILBOX_PREFIX;
+    std::string mailbox_path = mail_prefix + mailbox_name;
+    std::vector<std::string> files;
+
+    // Iterate over the directory
+    for(const auto & entry : fs::directory_iterator(mailbox_path))
+    {
+        try
+        {
+            files.push_back(get_stem(entry.path()));
+        }
+        catch(...)
+        {
+            return "ERROR";
+        }
+    }
+
+    // Get the maximum number file
+    int max = 0;
+    for(std::string file_name : files)
+    {
+        /*
+        // Check that file is appropriate length
+        if (file_name.length() > 5)
+        {
+            return "ERROR";
+        }
+        */
+
+        // Check that file ONLY has numbers
+        if (!isNumeric(file_name))
+        {
+            return "ERROR";
+        }
+        
+        // file_name.erase(0, file_name.find_first_not_of('0'));
+        int num;
+
+        // Check that file can be converted to a number
+        try
+        {
+            num = std::stoi(file_name);
+        }
+        catch(std::invalid_argument &e)
+        {
+            return "ERROR";
+        }
+        
+        if (num > max)
+        {
+            max = num;
+        }
+    }
+
+    // Format new file number
+    int new_num = max + 1;
+    std::string num_str = std::to_string(new_num);
+    if(num_str.length() > MAILBOX_NAME_MAX)
+    {
+        return "ERROR";
+    }
+    
+    /*
+    while(num_str.length() < 5)
+    {
+        num_str = "0" + num_str;
+    }
+    */
+
+    return num_str;
+}
+
+std::string getEarliestNumberPath(const std::string &mailbox_name)
+{
+    std::string mail_prefix = MAILBOX_PREFIX;
+    std::string mailbox_path = mail_prefix + mailbox_name;
+    std::vector<std::string> files;
+
+    // Iterate over the directory
+    for(const auto & entry : fs::directory_iterator(mailbox_path))
+    {
+        try
+        {
+            files.push_back(get_stem(entry.path()));
+        }
+        catch(...)
+        {
+            return "ERROR";
+        }
+    }
+
+    // Get the earliest number file
+    int min = INT_MAX;
+    for(std::string file_name : files)
+    {
+        // Check that file ONLY has numbers
+        if (!isNumeric(file_name))
+        {
+            return "ERROR";
+        }
+        
+        // file_name.erase(0, file_name.find_first_not_of('0'));
+        int num;
+
+        // Check that file can be converted to a number
+        try
+        {
+            num = std::stoi(file_name);
+        }
+        catch(std::invalid_argument &e)
+        {
+            return "ERROR";
+        }
+        
+        if (num < min)
+        {
+            min = num;
+        }
+    }
+
+    // Format new file number
+    std::string num_str = std::to_string(min);
+    if(num_str.length() > MAILBOX_NAME_MAX)
+    {
+        return "ERROR";
+    }
+    return MAILBOX_PREFIX + mailbox_name + "/" + num_str;
+}
+
+bool isMailboxEmpty(const std::string &mailbox_name)
+{
+    std::string mail_prefix = MAILBOX_PREFIX;
+    std::string mailbox_path = mail_prefix + mailbox_name;
+    std::vector<std::string> files;
+
+    // Iterate over the directory
+    for(const auto & entry : fs::directory_iterator(mailbox_path))
+    {
+        try
+        {
+            files.push_back(get_stem(entry.path()));
+        }
+        catch(...)
+        {
+            std::cerr << "ERROR: isDirEmpty failed when using filesystem.\n";
+            return 1;
+        }
+    }
+
+    return files.empty();
+}
+
+/*
+Input: (std::string) A string.
+Output: (boolean) Whether the string's characters are all numeric.
+Gives back whether a string only has numeric characters.
+*/
+bool isNumeric(const std::string &str)
+{
+    return std::all_of(str.begin(), str.end(), ::isdigit);
+}
+
+/*
+Input: (std::string) Mailbox name, (std::string) File name.
+Output: (std::string) Path to new writing new file.
+Gives back the appropriate path to write the new mailed file to.
+*/
+std::string newMailPath(const std::string &mailbox_name, const std::string &file_name)
+{
+    const std::string mail_prefix = MAILBOX_PREFIX;
+    std::string mailbox_path = mail_prefix + mailbox_name + "/" + file_name;
+    return mailbox_path;
 }
