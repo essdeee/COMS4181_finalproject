@@ -114,7 +114,7 @@ std::string receive_http_message(BIO *bio)
     for (const std::string& line : my::split_headers(headers)) {
         if (const char *colon = strchr(line.c_str(), ':')) {
             auto header_name = std::string(&line[0], colon);
-            if (header_name == "Content-Length") {
+            if (convert_to_lower(header_name) == "content-length") {
                 content_length = std::stoul(colon+1);
             }
         }
@@ -209,6 +209,7 @@ std::string send_request(std::string chain_file, HTTPrequest request, bool clien
     }
     
     // Verify the CA chain to verify the server
+    // TODO: NO LONGER A CHAIN FILE (just a root CA)
     if (SSL_CTX_load_verify_locations(ctx.get(), chain_file.c_str(), nullptr) != 1) {
         my::print_errors_and_exit("Error setting up trust store");
     }
@@ -239,6 +240,6 @@ std::string send_request(std::string chain_file, HTTPrequest request, bool clien
 
     my::send_http_request(ssl_bio.get(), request);
     std::string response = my::receive_http_message(ssl_bio.get());
-    //printf("%s", response.c_str());
+    // printf("%s", response.c_str());
     return response;
 }

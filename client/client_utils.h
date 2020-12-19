@@ -7,6 +7,7 @@
 
 /**************************** CONSTANTS ******************************/
 #define USERNAME_MAX 255
+#define PASSWORD_MAX 255
 extern const std::string SAVE_CERT_PATH;
 extern const std::string PRIVATE_KEY_PATH;
 
@@ -15,6 +16,8 @@ typedef uint8_t BYTE;            // 8-bit byte
 
 /**************************** FUNCTION DECLARATIONS *****************/
 void print_hex(const BYTE* byte_arr, int len);
+bool validMailboxChars(const std::string &str);
+bool validPasswordChars(const std::string &str);
 std::vector<std::string> split(std::string str,std::string sep);
 std::string convert_to_lower(const std::string str);
 bool is_number(const std::string& s);

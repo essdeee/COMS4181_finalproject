@@ -114,7 +114,6 @@ std::string receive_http_message(BIO *bio)
     for (const std::string& line : my::split_headers(headers)) {
         if (const char *colon = strchr(line.c_str(), ':')) {
             auto header_name = std::string(&line[0], colon);
-            // TODO: Make sure string parsing here is exactly as in the SIMPLE HTTP REQUEST doc 
             if (convert_to_lower(header_name) == "content-length") {
                 content_length = std::stoul(colon+1);
             }
@@ -290,8 +289,8 @@ int main()
         {   
             std::string request = my::receive_http_message(bio.get());
             HTTPrequest parsed_request = parse_request(request);
-            X509 *cert = SSL_get_peer_certificate(my::get_ssl(bio.get()));
 
+            // client-auth TLS logic for recvmsg and sendmsg
             std::string username;
             if((parsed_request.route == RECVMSG_ROUTE || 
                 parsed_request.route == SENDMSG_ENCRYPT_ROUTE || 

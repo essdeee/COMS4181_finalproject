@@ -17,9 +17,11 @@ const std::string TMP_MSG_FILE = "tmp-msg";
 const std::string HTTP_VERSION = "HTTP/1.0";
 const std::string SERVER_CERT = "web_server.cert.pem";
 const std::string SERVER_PRIVATE_KEY = "web_server.key.pem";
-const std::string MAILBOX_PREFIX = "./mail/";
 const std::string MAIL_OUT_REMOVE = "remove";
 const std::string MAIL_OUT_KEEP = "keep";
+
+const std::string MAILBOX_PREFIX = "./mail/";
+const std::string CERTS_PREFIX = "./certs/";
 
 std::string generateSalt() 
 {
@@ -101,6 +103,33 @@ bool validMailboxChars(const std::string &str)
         if (!std::isalpha(c) && 
         !std::isdigit(c) && 
         c != '+' && c != '-' && c != '_')
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool validPasswordChars(const std::string &str)
+{    
+    if (str.empty())
+    {
+        return false;
+    }
+
+    // First character must be alphabetic
+    if (!std::isalpha(str[0]))
+    {
+        return false;
+    }
+
+    for(char const &c : str)
+    {
+        if (!std::isalpha(c) && 
+        !std::isdigit(c) && 
+        c != '+' && c != '-' && c != '_' 
+        && c != '!' && c != '?' && c != '$')
         {
             return false;
         }
@@ -427,4 +456,16 @@ std::string newMailPath(const std::string &mailbox_name, const std::string &file
     const std::string mail_prefix = MAILBOX_PREFIX;
     std::string mailbox_path = mail_prefix + mailbox_name + "/" + file_name;
     return mailbox_path;
+}
+
+HTTPresponse server_error_response(const std::string failure_program, 
+                                    const std::string error_message, 
+                                    const std::string status_code)
+{
+    HTTPresponse error_response;
+    std::cerr << error_message + " SERVER PROGRAM FAILED: " + failure_program;
+    error_response.command_line = HTTP_VERSION + " " + status_code + " " + error_message;
+    error_response.status_code = status_code;
+    error_response.error = true;
+    return error_response;
 }

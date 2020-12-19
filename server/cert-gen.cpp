@@ -131,10 +131,11 @@ void print_bytes(uint8_t *data, size_t size)
 int main(int argc, char *argv[])
 {
 	// TODO: Will require passing in username as argument to save to the correct folder
-	if(argc == 2)
+	if(argc == 3)
 	{
 		//read first arg and decode as X509_REQ
 		std::string csrStr = argv[1];
+		std::string username = argv[2];
 		std::cout << csrStr;
 		std::vector<uint8_t> csrBytes = base64_decode(csrStr);
 		uint8_t *csr_data = csrBytes.data();
@@ -152,13 +153,13 @@ int main(int argc, char *argv[])
 		// Cleanup
 		BIO_free(bio);
 
-		const char *ca_key_path = "ca-key.pem";
-		const char *ca_crt_path = "ca-cert.pem";
+		//const char *ca_key_path = CA_KEY_PATH;
+		//const char *ca_crt_path = CA_CERT_PATH;
 
 		/* Load CA key and cert. */
 		EVP_PKEY *ca_key = NULL;
 		X509 *ca_crt = NULL;
-		if (!load_ca(ca_key_path, &ca_key, ca_crt_path, &ca_crt)) 
+		if (!load_ca(CA_KEY_PATH, &ca_key, CA_CERT_PATH, &ca_crt)) 
 		{
 			std::cerr << "Failed to load CA certificate and/or key!\n";
 			return 1;
@@ -177,7 +178,9 @@ int main(int argc, char *argv[])
 		BIO *out = NULL, *bio_err = NULL;
 		//TODO: this will be folder with cert i.e. addleness/sign.pem
 		// Will require passing in username as argument
-		const char  *cPath = "client.pem";
+		std::string cert_name = username + ".pem";
+		std::string cert_path = CERTS_PREFIX + cert_name;
+		const char  *cPath = cert_path.c_str();
 		out = BIO_new_file(cPath,"w");
 		ret = PEM_write_bio_X509(out, crt);
 

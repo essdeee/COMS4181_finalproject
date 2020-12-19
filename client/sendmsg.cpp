@@ -149,8 +149,8 @@ int main(int argc, char* argv[])
     std::vector<std::string> signed_encrypted_messages;
     for (std::string encrypt_cert_str : encrypt_certs)
     {
-        // Encrypt the message
         // Sign the message
+        // Encrypt the message
     }
 
     request = sendmsg_message_request(signed_encrypted_messages, recipients);

@@ -68,8 +68,9 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         else if ( program_name == "cert-gen" )
         {
             // arg[0] = csr string
+            // arg[1] = username (to save cert in correct place)
             close(pipe_fd[0]);               // Close the reading end of the pipe
-            status = execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str(), NULL);
+            status = execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "fetch-cert" )
         {
@@ -107,26 +108,39 @@ HTTPresponse getcert_route(int content_length, std::string request_body)
     HTTPresponse response;
     response.error = false;
 
+    // Make sure the content length is as expected
+    if(content_length != request_body.size())
+    {
+        return server_error_response("getcert_route", "Request body and content-length mismatch", "400");
+    }
+
     // Parse out the username, password, and csr string from request
     std::vector<std::string> split_body = split(request_body, "\n");
     if (split_body.size() != 3)
     {
-        std::cerr << "Request body not in valid format for getcert. Aborting.\n";
-        response.command_line = HTTP_VERSION + " 400" + " Request body not in valid format for getcert. Aborting.";
-        response.status_code = "400";
-        response.error = true;
-        return response;
+        return server_error_response("getcert_route", "Request body not in valid format.", "400");
     }
 
     std::string username = split_body[0];
     std::string password = split_body[1];
     std::string csr_string = split_body[2];
+
+    // Validate username and password
+    if(username.length() > MAILBOX_NAME_MAX || !validMailboxChars(username))
+    {
+        return server_error_response("getcert_route", "Username in request body invalid format.", "400");
+    }
+
+    if(password.length() > MAILBOX_NAME_MAX || !validPasswordChars(password))
+    {
+        return server_error_response("getcert_route", "Password in request body invalid format.", "400");
+    }
+
     std::vector<std::string> verify_pass_args {username, password};
- 
     if (call_server_program("verify-pass", verify_pass_args) == 0)
     {
         std::cout << "Client username and password is valid. Now generating certificate...\n";
-        std::vector<std::string> cert_gen_args {csr_string};
+        std::vector<std::string> cert_gen_args {csr_string, username};
         if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
         {
             // Read newly created certificate from tmp file
@@ -137,29 +151,17 @@ HTTPresponse getcert_route(int content_length, std::string request_body)
 
             if( remove( TMP_CERT_FILE.c_str() ) != 0 )
             {
-                std::cerr << "Error deleting tmp file. getcert failed on server end. Aborting.\n";
-                response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
-                response.status_code = "500";
-                response.error = true;
-                return response;
+                return server_error_response("cert-gen", "Error deleting tmp file on server end.", "500");
             }
         }
         else
         {
-            std::cerr << "Certificate generation failed on server end. cert-gen failed.\n";
-            response.command_line = HTTP_VERSION + " 500" + " Certificate generation failed on server end. cert-gen failed.";
-            response.status_code = "500";
-            response.error = true;
-            return response;
+            return server_error_response("cert-gen", "Certificate generation failed on server end.", "500");
         }
     }
     else
     {
-        std::cerr << "Client specified invalid username/password. verify-pass failed.\n";
-        response.command_line = HTTP_VERSION + " 400" + " Client specified invalid username/password. verify-pass failed.";
-        response.status_code = "400";
-        response.error = true;
-        return response;
+        return server_error_response("cert-gen", "Client specified invalid username/password combination.", "400");
     }
 
     response.command_line = HTTP_VERSION + " 200 OK";

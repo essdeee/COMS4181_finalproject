@@ -71,13 +71,13 @@ int main(int argc, char* argv[])
     std::string sender_cert_str = cert_msg[0];
     std::string encrypted_msg = cert_msg[1];
 
+    // TODO (Francis): 
+    // Decrypt message
+    std::string decrypted_msg;
+
     // TODO (Francis):
     // Verify signature on the message is the original sender's
     // If not, we can print to cerr and return 1
-
-    // TODO (Francis): 
-    // Decrypt message after verifying the signature
-    std::string decrypted_msg;
 
     // Display decrypted message to client
     std::cout << decrypted_msg;

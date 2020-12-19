@@ -36,7 +36,7 @@ std::string getcert_response(std::string server_response)
         std::vector<std::string> split_body = split(response.body, "\n");
         if(split_body.size() != 1)
         {
-            response_string = "!Server body improperly formatted. Should only be one newline delimited certificate.\n";
+            response_string = "!Response body improperly formatted. Should only be one newline delimited certificate.\n";
         }
         else
         {
@@ -64,9 +64,14 @@ int main(int argc, char* argv[])
     std::string password = getpass("Enter password: ");
 
     // Validate username and password lengths
-    if(username.length() > USERNAME_MAX)
+    if(username.length() > USERNAME_MAX && !validMailboxChars(username))
     {
-        std::cerr << "Username too long. Aborting.\n";
+        std::cerr << "Username invalid (too long or invalid characters). Aborting.\n";
+        return 1;
+    }
+    if(!validPasswordChars(password))
+    {
+        std::cerr << "Password invalid (invalid characters). Aborting.\n";
         return 1;
     }
 
