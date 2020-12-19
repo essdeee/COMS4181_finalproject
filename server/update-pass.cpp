@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     if(argc != 3)
     {
         std::cerr << "verify-pass must have two arguments. Aborting.\n";
-        return 1;
+        exit(1);
     }
 
     // Extract user and pass from args
@@ -18,6 +18,13 @@ int main(int argc, char *argv[])
     std::ifstream infile(PASSWORD_FILE);
     std::vector<std::string> new_pass_file_lines;
     std::string line;
+    if (!infile.is_open())
+    {
+        std::cerr << "update-pass error opening password file. Aborting.\n";
+        exit(1);
+    }
+
+    bool user_found = false;
     while ( std::getline(infile, line) )
     {
         // Get data from the password file for current user
@@ -25,7 +32,7 @@ int main(int argc, char *argv[])
         if (split_line.size() != 3)
         {
             std::cerr << "Password file is corrupted. Line invalid.\n";
-            return 1;
+            exit(1);
         }
         std::string true_username = split_line[0];
         std::string true_salt_hash = split_line[1];
@@ -42,7 +49,7 @@ int main(int argc, char *argv[])
             if (version_salt_hash.size() != 3)
             {
                 std::cerr << "Password file is corrupted. Hash not calculated correctly.\n";
-                return 1;
+                exit(1);
             }
             std::string new_version = "$" + version_salt_hash[0];
             std::string new_salt = version_salt_hash[1];
@@ -54,17 +61,29 @@ int main(int argc, char *argv[])
             new_line += hash + " ";
             new_line += password; 
             new_pass_file_lines.push_back(new_line);
+
+            user_found = true;
         }
         else
         {
             new_pass_file_lines.push_back(line);
         }
     }
-
     infile.close();
+
+    if(!user_found)
+    {
+        std::cerr << "update-pass could not update because user " + username + " not found.\n";
+        exit(1);
+    }
 
     // Write updated password file
     std::ofstream outfile(PASSWORD_FILE);
+    if (!outfile.is_open())
+    {
+        std::cerr << "update-pass error writing new password file. Aborting.\n";
+        exit(1);
+    }
     for ( std::string new_line : new_pass_file_lines)
     {
         outfile << new_line + "\n";

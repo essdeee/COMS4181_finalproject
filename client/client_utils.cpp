@@ -13,6 +13,7 @@
 /**************************** CONSTANTS ******************************/
 const std::string SAVE_CERT_PATH = "client.pem";
 const std::string PRIVATE_KEY_PATH = "client.key.pem";
+const std::string CA_CERT_PATH = "ca-chain.cert.pem"; // Trusted CA Cert for authenticating the server
 
 /**************************** FUNCTIONS ******************************/
 void print_hex(const BYTE* byte_arr, int len)

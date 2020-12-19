@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
     HTTPrequest request = recvmsg_request();
 
     // Send client request and receive response
-    std::string response = send_request("ca-chain.cert.pem", request, true); // Must be client-auth
+    std::string response = send_request(request, true); // Must be client-auth
     
     // Get back (1) certificate from the sender (to verify signature) (2) the encrypted message
     std::vector<std::string> cert_msg = recvmsg_response(response);

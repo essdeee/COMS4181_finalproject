@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     HTTPrequest request = sendmsg_encrypt_request(recipients);
 
     // Send client request and receive response
-    std::string response = send_request("ca-chain.cert.pem", request, true); // Should be client-auth
+    std::string response = send_request(request, true); // Should be client-auth
     
     // Write encryption certs (from server response) to file
     std::vector<std::string> encrypt_certs = sendmsg_encrypt_response(response);
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
     request = sendmsg_message_request(signed_encrypted_messages, recipients);
 
     // Send client request and receive response
-    response = send_request("ca-chain.cert.pem", request, false);
+    response = send_request(request, false);
 
     // Parse the server response 
     std::string parsed_response = sendmsg_message_response(response);

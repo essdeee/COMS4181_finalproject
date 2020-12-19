@@ -182,7 +182,7 @@ void verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
 
 } // namespace my
 
-std::string send_request(std::string chain_file, HTTPrequest request, bool client_auth)
+std::string send_request(HTTPrequest request, bool client_auth)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_library_init();
@@ -210,7 +210,7 @@ std::string send_request(std::string chain_file, HTTPrequest request, bool clien
     
     // Verify the CA chain to verify the server
     // TODO: NO LONGER A CHAIN FILE (just a root CA)
-    if (SSL_CTX_load_verify_locations(ctx.get(), chain_file.c_str(), nullptr) != 1) {
+    if (SSL_CTX_load_verify_locations(ctx.get(), CA_CERT_PATH.c_str(), nullptr) != 1) {
         my::print_errors_and_exit("Error setting up trust store");
     }
 

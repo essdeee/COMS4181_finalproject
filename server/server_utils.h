@@ -18,8 +18,8 @@ extern const std::string TMP_MSG_FILE;
 extern const std::string HTTP_VERSION;
 extern const std::string SERVER_CERT;
 extern const std::string SERVER_PRIVATE_KEY;
-extern const std::string MAIL_OUT_REMOVE;
-extern const std::string MAIL_OUT_KEEP;
+extern const std::string MAIL_OUT_SEND;
+extern const std::string MAIL_OUT_PEEK;
 
 extern const std::string MAILBOX_PREFIX;
 extern const std::string CERTS_PREFIX;

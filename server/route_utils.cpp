@@ -175,63 +175,60 @@ HTTPresponse changepw_route(int content_length, std::string request_body)
     HTTPresponse response;
     response.error = false;
 
+    // Make sure the content length is as expected
+    if(content_length != request_body.size())
+    {
+        return server_error_response("changepw_route", "Request body and content-length mismatch", "400");
+    }
+
     // Parse out the username and passwords from request
     std::vector<std::string> split_body = split(request_body, "\n");
     if (split_body.size() != 4)
     {
-        std::cerr << "Request body not in valid format for changepw. Aborting.\n";
-        response.command_line = HTTP_VERSION + " 400" + " Request body not in valid format for changepw. Aborting.";
-        response.status_code = "400";
-        response.error = true;
-        return response;
+        return server_error_response("changepw_route", "Request body not in valid format for changepw.", "400");
     }
 
     std::string username = split_body[0]; 
     std::string old_password = split_body[1];
     std::string new_password = split_body[2];
     std::string csr_string = split_body[3];
-    std::vector<std::string> verify_pass_args {username, old_password};
 
+    // Validate username and password
+    if(username.length() > MAILBOX_NAME_MAX || !validMailboxChars(username))
+    {
+        return server_error_response("getcert_route", "Username in request body invalid format.", "400");
+    }
+    if(old_password.length() > PASSWORD_MAX || !validPasswordChars(old_password))
+    {
+        return server_error_response("getcert_route", "Old password in request body invalid format.", "400");
+    }
+    if(new_password.length() > PASSWORD_MAX || !validPasswordChars(new_password))
+    {
+        return server_error_response("getcert_route", "New password in request body invalid format.", "400");
+    }
+
+    // The meat of the execl programs...
+    // Call verify-pass to make sure the password hashes and verifies.
+    std::vector<std::string> verify_pass_args {username, old_password};
     if (call_server_program("verify-pass", verify_pass_args) != 0)
     {
-        std::cerr << "Client specified invalid username/password. verify-pass failed.\n";
-        response.command_line = HTTP_VERSION + " 400" + " Client specified invalid username/password. verify-pass failed.";
-        response.status_code = "400";
-        response.error = true;
-        return response;
+        return server_error_response("verify-pass", "Client specified invalid username/password.", "400");
     }
     
-    std::vector<std::string> mail_out_args {username, MAIL_OUT_KEEP};
+    // mail-out called to make sure there's no pending mail.
+    std::vector<std::string> mail_out_args {username, MAIL_OUT_PEEK};
     int mail_out_return = call_server_program("mail-out", mail_out_args);
     if (mail_out_return == MAIL_OUT_MSG_FOUND)
     {
-        std::cerr << "Message still found in inbox. Password cannot be updated yet.\n";
-        response.command_line = HTTP_VERSION + " 500" + " Password cannot be updated yet; use recvmsg to download pending message(s).";
-        response.status_code = "500";
-        response.error = true;
-        return response;
+        return server_error_response("mail-out", "Message still found in inbox. Password cannot be updated yet.", "500");
     }
     else if (mail_out_return == MAIL_OUT_ERROR)
     {
-        std::cerr << "mail-out failed because of internal error.\n";
-        response.command_line = HTTP_VERSION + " 500" + " Mail delivery failed because internal error.";
-        response.status_code = "500";
-        response.error = true;
-        return response;
+        return server_error_response("mail-out", "Mail checking program failed because internal error. Please try again.", "500");
     }
     
-    std::vector<std::string> update_pass_args {username, new_password};
-
-    if (call_server_program("update-pass", update_pass_args) != 0)
-    {
-        std::cerr << "Password could not be updated. update-pass failed.\n";
-        response.command_line = HTTP_VERSION + " 500" + " Password could not be updated. update-pass failed on server end.";
-        response.status_code = "500";
-        response.error = true;
-        return response;
-    }
-    
-    std::vector<std::string> cert_gen_args {csr_string};
+    // cert-gen called to generate new certificate, encode, and send back to client as response body.
+    std::vector<std::string> cert_gen_args {csr_string, username};
     if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
     {
         std::string cert;
@@ -241,21 +238,20 @@ HTTPresponse changepw_route(int content_length, std::string request_body)
 
         if( remove( TMP_CERT_FILE.c_str() ) != 0 )
         {
-            std::cerr << "Error deleting tmp file. getcert failed on server end. Aborting.\n";
-            response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
-            response.status_code = "500";
-            response.error = true;
-            return response;
+            return server_error_response("cert-gen", "Error deleting tmp file on server end.", "500");
         }
         response.body = cert;
     }
     else
     {
-        std::cerr << "Certificate generation failed. cert-gen failed.\n";
-        response.command_line = HTTP_VERSION + " 500" + " Certificate generation failed on server end.";
-        response.status_code = "500";
-        response.error = true;
-        return response;
+        return server_error_response("cert-gen", "Certificate generation failed on server end.", "500");
+    }
+
+    // update-pass finally called to update the password in the shadow file.
+    std::vector<std::string> update_pass_args {username, new_password};
+    if (call_server_program("update-pass", update_pass_args) != 0)
+    {
+        return server_error_response("update-pass", "Password could not be updated on server end.", "500");
     }
 
     response.command_line = HTTP_VERSION + " 200 OK";
@@ -268,7 +264,6 @@ HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body)
 {
     HTTPresponse response;
     response.error = false;
-    response.body = "";
 
     // Body is just a list of recipients
     std::vector<std::string> recipients = split(request_body, "\n");
@@ -380,7 +375,7 @@ HTTPresponse recvmsg_route(std::string username)
     HTTPresponse response;
     response.error = false;
 
-    std::vector<std::string> mail_out_args {username, MAIL_OUT_REMOVE};
+    std::vector<std::string> mail_out_args {username, MAIL_OUT_SEND};
     int mail_out_return = call_server_program("mail-out", mail_out_args);
     if (mail_out_return == MAIL_OUT_EMPTY)
     {

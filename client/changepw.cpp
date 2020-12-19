@@ -29,7 +29,6 @@ std::string changepw_response(std::string server_response)
     // Parse and get error code if there is one
     HTTPresponse response = parse_http_response(server_response);
     std::string response_string;
-    std::cout << server_response;
 
     // Handle error codes with response.valid
     if(response.valid)
@@ -67,9 +66,19 @@ int main(int argc, char* argv[])
     std::string new_password = getpass("Enter new password: ");
 
     // Validate username and password lengths
-    if(username.length() > USERNAME_MAX)
+    if(username.length() > USERNAME_MAX && !validMailboxChars(username))
     {
-        std::cerr << "Username too long. Aborting.\n";
+        std::cerr << "Username invalid (too long or invalid characters). Aborting.\n";
+        return 1;
+    }
+    if(!validPasswordChars(old_password))
+    {
+        std::cerr << "Old password invalid (invalid characters). Aborting.\n";
+        return 1;
+    }
+    if(!validPasswordChars(new_password))
+    {
+        std::cerr << "New password invalid (invalid characters). Aborting.\n";
         return 1;
     }
 
@@ -80,7 +89,7 @@ int main(int argc, char* argv[])
     HTTPrequest request = changepw_request(username, old_password, new_password, csr);
 
     // Send cleint request and receive response. Client authentication FALSE.
-    std::string response = send_request("ca-chain.cert.pem", request, false);    
+    std::string response = send_request(request, false);    
 
     // Write cert (from server response) to file    
     std::string certstr = changepw_response(response);

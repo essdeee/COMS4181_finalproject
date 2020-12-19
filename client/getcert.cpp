@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     HTTPrequest request = getcert_request(username, password, csr);
 
     // Send client request and receive response. Client authentication FALSE.
-    std::string response = send_request("ca-chain.cert.pem", request, false);
+    std::string response = send_request(request, false);
     
     // Parse out the cert from the server response
     std::string certstr = getcert_response(response);

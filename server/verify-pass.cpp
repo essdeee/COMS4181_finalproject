@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     if(argc != 3)
     {
         std::cerr << "verify-pass must have two arguments. Aborting.\n";
-        return 1;
+        exit(1);
     }
 
     // Extract user and pass from args
@@ -16,6 +16,12 @@ int main(int argc, char *argv[])
 
     // Read from password file
     std::ifstream infile(PASSWORD_FILE);
+    if (!infile.is_open())
+    {
+        std::cerr << "update-pass error opening password file. Aborting.\n";
+        exit(1);
+    }
+    
     std::string line;
     int valid = 1; // 0 for valid, 1 for invalid
     while ( std::getline(infile, line) )
@@ -25,7 +31,7 @@ int main(int argc, char *argv[])
         if (split_line.size() != 3)
         {
             std::cerr << "Password file is corrupted. Line invalid.\n";
-            return 1;
+            exit(1);
         }
         std::string true_username = split_line[0];
         std::string true_salt_hash = split_line[1];
@@ -36,7 +42,7 @@ int main(int argc, char *argv[])
         if (version_salt_hash.size() != 3)
         {
             std::cerr << "Password file is corrupted. Hash not calculated correctly.\n";
-            return 1;
+            exit(1);
         }
         std::string true_version = "$" + version_salt_hash[0];
         std::string true_salt = version_salt_hash[1];

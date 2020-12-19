@@ -11,14 +11,14 @@
 namespace fs = std::filesystem;
 
 // CONSTANTS AND MACROS
-const std::string PASSWORD_FILE = "pass.txt";
+const std::string PASSWORD_FILE = "shadow";
 const std::string TMP_CERT_FILE = "tmp-crt";
 const std::string TMP_MSG_FILE = "tmp-msg";
 const std::string HTTP_VERSION = "HTTP/1.0";
 const std::string SERVER_CERT = "web_server.cert.pem";
 const std::string SERVER_PRIVATE_KEY = "web_server.key.pem";
-const std::string MAIL_OUT_REMOVE = "remove";
-const std::string MAIL_OUT_KEEP = "keep";
+const std::string MAIL_OUT_SEND = "send";
+const std::string MAIL_OUT_PEEK = "peek";
 
 const std::string MAILBOX_PREFIX = "./mail/";
 const std::string CERTS_PREFIX = "./certs/";
