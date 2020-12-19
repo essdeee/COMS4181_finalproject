@@ -12,7 +12,7 @@
 
 /**************************** CONSTANTS ******************************/
 const std::string SAVE_CERT_PATH = "client.pem";
-const std::string PRIVATE_KEY_PATH = "private_key";
+const std::string PRIVATE_KEY_PATH = "client.key.pem";
 
 /**************************** FUNCTIONS ******************************/
 void print_hex(const BYTE* byte_arr, int len)
@@ -73,6 +73,18 @@ void csr_to_pem(X509_REQ *csr, uint8_t **csr_bytes, size_t *csr_size)
 	BIO_free_all(bio);
 }
 
+int private_key_to_pem(RSA *private_key, std::string file_name)
+{
+    FILE * fp = fopen(file_name.c_str(), "w");
+    if(!PEM_write_RSAPrivateKey(fp, private_key, NULL, 0, 0, NULL, NULL))
+    {
+        return 1;
+    }
+    fflush(fp);
+    fclose(fp);
+    return 0;
+}
+
 std::vector<BYTE> gen_csr(std::string client_name)
 {
     int             ret = 0;
@@ -111,12 +123,15 @@ std::vector<BYTE> gen_csr(std::string client_name)
     if(ret != 1){
         goto free_all;
     }
+    private_key_to_pem(r, "thisdoesntwork.key.pem");
+
     // 2. set version of x509 req
     x509_req = X509_REQ_new();
     ret = X509_REQ_set_version(x509_req, nVersion);
     if (ret != 1){
         goto free_all;
     }
+
     // 3. set subject of x509 req
     x509_name = X509_REQ_get_subject_name(x509_req);
     ret = X509_NAME_add_entry_by_txt(x509_name,"C", MBSTRING_ASC, (const unsigned char*)szCountry, -1, -1, 0);

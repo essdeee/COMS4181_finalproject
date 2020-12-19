@@ -9,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include "server_utils.h"
+#include "route_utils.h"
 
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -70,7 +71,7 @@ public:
 {
     my::StringBIO bio;
     ERR_print_errors(bio.bio());
-    throw std::runtime_error(std::string(message) + "\n" + std::move(bio).str());
+    throw std::runtime_error(std::string(message) + ":" + std::move(bio).str());
 }
 
 std::string receive_some_data(BIO *bio)
@@ -78,13 +79,13 @@ std::string receive_some_data(BIO *bio)
     char buffer[1024];
     int len = BIO_read(bio, buffer, sizeof(buffer));
     if (len < 0) {
-        my::print_errors_and_throw("error in BIO_read");
+        my::print_errors_and_throw("Error in BIO_read");
     } else if (len > 0) {
         return std::string(buffer, len);
     } else if (BIO_should_retry(bio)) {
         return receive_some_data(bio);
     } else {
-        my::print_errors_and_throw("empty BIO_read");
+        my::print_errors_and_throw("Empty BIO_read");
     }
 }
 
@@ -143,6 +144,91 @@ void send_http_response(BIO *bio, const HTTPresponse http_response)
     BIO_flush(bio);
 }
 
+HTTPresponse verify_the_certificate(SSL *ssl)
+{
+    HTTPresponse http_response;
+    int err = SSL_get_verify_result(ssl);
+    if (err != X509_V_OK) {
+        const char *message = X509_verify_cert_error_string(err);
+        fprintf(stderr, "Certificate verification error: %s (%d)\n", message, err);
+
+        http_response.content_length = 0;
+        http_response.error = 1;
+        http_response.status_code = "400";
+        http_response.command_line = HTTP_VERSION + " 400 recvmsg/sendmsg certificate verification error.";
+        return http_response;
+    }
+    X509 *cert = SSL_get_peer_certificate(ssl);
+    if (cert == nullptr) {
+        fprintf(stderr, "No certificate was presented by the client's recvmsg/sendmsg request.\n");
+        
+        http_response.content_length = 0;
+        http_response.error = 1;
+        http_response.status_code = "400";
+        http_response.command_line = HTTP_VERSION + " 400 recvmsg/sendmsg MUST be client-authenticated."; 
+        return http_response;
+    }
+
+    // Extract the common name from the cert
+    X509_NAME *subject_name_obj = X509_get_subject_name(cert);
+    if (subject_name_obj == nullptr)
+    {
+        fprintf(stderr, "No subject name was presented by the client's certificate.\n");
+        
+        http_response.content_length = 0;
+        http_response.error = 1;
+        http_response.status_code = "400";
+        http_response.command_line = HTTP_VERSION + " 400 recvmsg/sendmsg cert must have subject name."; 
+        return http_response;
+    }
+
+    // Get the common name from the cert and place it into successful http response object
+    char *subject_name;
+    subject_name = X509_NAME_oneline(subject_name_obj, 0, 0);
+    std::string subject_line = subject_name;
+    OPENSSL_free(subject_name);
+    X509_free(cert);
+
+    // Parse out the common name from the subject line
+    std::string username;
+    std::vector<std::string> split_subject_name = split(subject_line, "/");
+    bool found_common_name = false;
+    for(std::string field : split_subject_name)
+    {
+        std::size_t found = field.find_first_of("CN=");
+        if(found != std::string::npos)
+        {
+            username = field.substr(found + 3);
+            found_common_name = true;
+        }
+    }
+    
+    if(!found_common_name)
+    {
+        fprintf(stderr, "No Common Name was presented by the client's certificate.\n");
+        
+        http_response.content_length = 0;
+        http_response.error = 1;
+        http_response.status_code = "400";
+        http_response.command_line = HTTP_VERSION + " 400 recvmsg/sendmsg cert must have Common Name."; 
+        return http_response;
+    }
+
+    http_response.error = 0;
+    http_response.command_line = username;
+    return http_response;
+}
+
+SSL *get_ssl(BIO *bio)
+{
+    SSL *ssl = nullptr;
+    BIO_get_ssl(bio, &ssl);
+    if (ssl == nullptr) {
+        my::print_errors_and_exit("Error in BIO_get_ssl");
+    }
+    return ssl;
+}
+
 my::UniquePtr<BIO> accept_new_tcp_connection(BIO *accept_bio)
 {
     if (BIO_do_accept(accept_bio) <= 0) {
@@ -162,9 +248,7 @@ int main()
     auto client_auth_ctx = my::UniquePtr<SSL_CTX>(SSL_CTX_new(SSLv23_method()));
 #else
     auto ctx = my::UniquePtr<SSL_CTX>(SSL_CTX_new(TLS_method()));
-    auto client_auth_ctx = my::UniquePtr<SSL_CTX>(SSL_CTX_new(TLS_method()));
-    SSL_CTX_set_min_proto_version(ctx.get(), TLS1_2_VERSION);
-    SSL_CTX_set_min_proto_version(client_auth_ctx.get(), TLS1_2_VERSION);
+    SSL_CTX_set_min_proto_version(ctx.get(), TLS1_3_VERSION);
 #endif
 
     // Load the server certificate and private key
@@ -175,27 +259,21 @@ int main()
         my::print_errors_and_exit("Error loading server private key");
     }
 
-    /*
-    // Load the server certificate and private key for client auth
-    if (SSL_CTX_use_certificate_file(client_auth_ctx.get(), SERVER_CERT.c_str(), SSL_FILETYPE_PEM) <= 0) {
-        my::print_errors_and_exit("Error loading server certificate");
+    STACK_OF(X509_NAME) *list;
+    list = SSL_load_client_CA_file("ca-cert.pem");
+    if(list == NULL)
+    {
+        my::print_errors_and_exit("Error loading CA for client certificates.");
     }
-    if (SSL_CTX_use_PrivateKey_file(client_auth_ctx.get(), SERVER_PRIVATE_KEY.c_str(), SSL_FILETYPE_PEM) <= 0) {
-        my::print_errors_and_exit("Error loading server private key");
-    }
-    */
+    SSL_CTX_set_client_CA_list(ctx.get(), list);
+    SSL_CTX_load_verify_locations(ctx.get(), "ca-chain.cert.pem", NULL);
+    SSL_CTX_set_verify(ctx.get(), SSL_VERIFY_PEER, NULL);
 
     // Bind to port
     auto accept_bio = my::UniquePtr<BIO>(BIO_new_accept("8080")); // 443 is reserved for root
-    // auto client_auth_accept_bio = my::UniquePtr<BIO>(BIO_new_accept("8083")); // 443 is reserved for root
     if (BIO_do_accept(accept_bio.get()) <= 0) {
         my::print_errors_and_exit("Error in BIO_do_accept (binding to port 8080)");
     }
-    /*
-    if (BIO_do_accept(client_auth_accept_bio.get()) <= 0) {
-        my::print_errors_and_exit("Error in BIO_do_accept (binding to port 4432)");
-    }
-    */
 
     static auto shutdown_the_socket = [fd = BIO_get_fd(accept_bio.get(), nullptr)]() {
         close(fd);
@@ -203,29 +281,54 @@ int main()
     signal(SIGINT, [](int) { shutdown_the_socket(); });
 
     // Listen for new connections
-    while (1) 
+    while (auto bio = my::accept_new_tcp_connection(accept_bio.get())) 
     {
-        if(auto bio = my::accept_new_tcp_connection(accept_bio.get()))
-        {
-            bio = std::move(bio)
-                | my::UniquePtr<BIO>(BIO_new_ssl(ctx.get(), 0))
-                ;
-            try {
-                std::string request = my::receive_http_message(bio.get());
+        bio = std::move(bio)
+            | my::UniquePtr<BIO>(BIO_new_ssl(ctx.get(), 0))
+            ;
+        try 
+        {   
+            std::string request = my::receive_http_message(bio.get());
+            HTTPrequest parsed_request = parse_request(request);
+            X509 *cert = SSL_get_peer_certificate(my::get_ssl(bio.get()));
 
-                // Do the route function
-                HTTPresponse http_response = route(request);
-
-                printf("Got request:\n");
-                printf("%s\n", request.c_str());
-                my::send_http_response(bio.get(), http_response);
-            } catch (const std::exception& ex) {
-                printf("Worker exited with exception:\n%s\n", ex.what());
+            std::string username;
+            if((parsed_request.route == RECVMSG_ROUTE || 
+                parsed_request.route == SENDMSG_ENCRYPT_ROUTE || 
+                parsed_request.route == SENDMSG_MESSAGE_ROUTE))
+            {    
+                HTTPresponse client_auth_response = my::verify_the_certificate(my::get_ssl(bio.get()));
+                if(client_auth_response.error)
+                {
+                    printf("Got request:\n");
+                    printf("%s\n", request.c_str());
+                    my::send_http_response(bio.get(), client_auth_response);
+                    continue;
+                }
+                else
+                {
+                    username = client_auth_response.command_line;
+                    std::cout << "Client authenticated as: " << username << std::endl;
+                }
             }
-        }
-        else
-        {
-            break;
+
+            // Do the route function
+            HTTPresponse http_response = route(request, username);
+
+            printf("Got request:\n");
+            printf("%s\n", request.c_str());
+            my::send_http_response(bio.get(), http_response);
+        } catch (const std::exception& ex) {
+            printf("Worker exited with exception:\n%s\n", ex.what());
+            std::string exception = ex.what();
+            
+            // Send back a response to client so they don't get core dumped
+            HTTPresponse http_response;
+            http_response.content_length = 0;
+            http_response.error = 1;
+            http_response.status_code = "400";
+            http_response.command_line = HTTP_VERSION + " 400 " +  exception; 
+            my::send_http_response(bio.get(), http_response);
         }
     }
     printf("\nClean exit!\n");

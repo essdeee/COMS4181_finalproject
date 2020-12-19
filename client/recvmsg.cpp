@@ -8,11 +8,11 @@
 #include <vector>
 #include "base64.h"
 
-HTTPrequest recvmsg_request(std::string username)
+HTTPrequest recvmsg_request()
 {
     HTTPrequest request;
     request.verb = "GET";
-    request.command_line = "GET " + HTTPS_PREFIX + HOSTNAME + RECVMSG_ROUTE + "?" + username + " HTTP/1.0"; 
+    request.command_line = "GET " + HTTPS_PREFIX + HOSTNAME + RECVMSG_ROUTE + " HTTP/1.0"; 
     request.hostname = HOSTNAME;
     request.port = DEFAULT_PORT;
     return request;
@@ -54,18 +54,11 @@ std::vector<std::string> recvmsg_response(std::string server_response)
 
 int main(int argc, char* argv[])
 {
-    if(argc != 2)
-    {
-        std::cerr << "recvmsg takes in one argument: the username.\n";
-        return 1;
-    }
-
-    // Generate recvmsg HTTP request (nothing in body, GET request)
-    std::string username = argv[1];
-    HTTPrequest request = recvmsg_request(username);
+    // Request is a simple GET request using the cert that should already be on client side
+    HTTPrequest request = recvmsg_request();
 
     // Send client request and receive response
-    std::string response = send_request("ca-chain.cert.pem", request, false); // Must be client-auth
+    std::string response = send_request("ca-chain.cert.pem", request, true); // Must be client-auth
     
     // Get back (1) certificate from the sender (to verify signature) (2) the encrypted message
     std::vector<std::string> cert_msg = recvmsg_response(response);

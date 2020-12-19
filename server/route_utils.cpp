@@ -99,7 +99,7 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         p = wait(&status);
     }
 
-    return status;
+    return WEXITSTATUS(status);
 }
 
 HTTPresponse getcert_route(int content_length, std::string request_body)
@@ -351,6 +351,8 @@ HTTPresponse sendmsg_message_route(int content_length, std::string request_body)
         return response;
     }
 
+    // TODO: SOMEHOW GET THE SENDER FROM THE CLIENT'S CERTIFICATE
+
     for ( int i = 0; i < recipients.size(); i++ )
     {
         std::vector<std::string> mail_in_args {recipients[i], messages[i]};
@@ -396,6 +398,7 @@ HTTPresponse recvmsg_route(std::string username)
     }
     else
     {
+        std::cout << mail_out_return << std::endl;
         // mail-out returned 0, so we can read the msg from the tmp file tmp-msg
         std::string msg;
         std::string encrypted_msg;

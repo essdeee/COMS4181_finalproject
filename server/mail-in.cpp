@@ -40,6 +40,7 @@ int main(int argc, char *argv[])
     new_file.open(new_mail_path, std::ios::trunc);
     if(new_file.is_open())
     {
+        // Format is sender<newline>mesage 
         new_file << msg;
         new_file.close();
     }

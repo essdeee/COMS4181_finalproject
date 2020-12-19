@@ -127,6 +127,18 @@ bool doesMailboxExist(const std::string &s)
     return (stat (mailbox_path.c_str(), &buffer) == 0);
 }
 
+std::string parse_url(std::string url)
+{
+    // Find first occurence of ://
+    size_t found = url.find_first_of(":");
+    std::string protocol=url.substr(0,found); 
+
+    std::string url_new=url.substr(found+4); //url_new is the url excluding the https part
+    size_t found2 = url_new.find_first_of("/");
+    std::string path =url_new.substr(found2);
+    return path;
+}
+
 HTTPrequest parse_request(const std::string request)
 {
     HTTPrequest parsed_request;
@@ -167,31 +179,7 @@ HTTPrequest parse_request(const std::string request)
         }
     }
 
-    parsed_request.body = request_body;
-    return parsed_request;
-}
-
-std::string parse_url(std::string url)
-{
-    // Find first occurence of ://
-    size_t found = url.find_first_of(":");
-    std::string protocol=url.substr(0,found); 
-
-    std::string url_new=url.substr(found+4); //url_new is the url excluding the https part
-    size_t found2 = url_new.find_first_of("/");
-    std::string path =url_new.substr(found2);
-    return path;
-}
-
-HTTPresponse route(const std::string request)
-{
-    // HTTPS response at the end
-    HTTPresponse response;
-
-    // Parse out the command line, content length, and body
-    HTTPrequest parsed_request = parse_request(request);
-
-    // Parse out the route and integer valued content length
+    // Parse out username, route, verb
     std::vector<std::string> first_line;
     first_line = split(parsed_request.command_line, " ");
     std::string verb = first_line[0];
@@ -204,24 +192,39 @@ HTTPresponse route(const std::string request)
         username = route_username[1];
     }
 
+    parsed_request.verb = verb;
+    parsed_request.route = route;
+    parsed_request.username = username;
+    parsed_request.body = request_body;
+    return parsed_request;
+}
+
+HTTPresponse route(const std::string request, const std::string username)
+{
+    // HTTPS response at the end
+    HTTPresponse response;
+
+    // Parse out the command line, content length, and body
+    HTTPrequest parsed_request = parse_request(request);
+
     // Execute the program
-    if(route == GETCERT_ROUTE)
+    if(parsed_request.route == GETCERT_ROUTE)
     {
         response = getcert_route(std::stoi(parsed_request.content_length), parsed_request.body);
     }
-    else if(route == CHANGEPW_ROUTE)
+    else if(parsed_request.route == CHANGEPW_ROUTE)
     {
         response = changepw_route(std::stoi(parsed_request.content_length), parsed_request.body);
     }
-    else if(route == SENDMSG_ENCRYPT_ROUTE)
+    else if(parsed_request.route == SENDMSG_ENCRYPT_ROUTE)
     {
         response = sendmsg_encrypt_route(std::stoi(parsed_request.content_length), parsed_request.body);
     }
-    else if(route == SENDMSG_MESSAGE_ROUTE)
+    else if(parsed_request.route == SENDMSG_MESSAGE_ROUTE)
     {
         response = sendmsg_message_route(std::stoi(parsed_request.content_length), parsed_request.body);
     }
-    else if(route == RECVMSG_ROUTE && !username.empty())
+    else if(parsed_request.route == RECVMSG_ROUTE)
     {
         response = recvmsg_route(username);
     }

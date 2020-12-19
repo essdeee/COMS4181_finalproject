@@ -24,6 +24,9 @@ struct HTTPrequest
     std::string command_line;    // <verb> <url> <version>
     std::string content_length; // "Content-Length" is the only nonempty <option-line>
     std::string body;           // body that goes after the newline
+    std::string username;       // Possibly empty (only for recvmsg requests)
+    std::string verb;           // GET or POST
+    std::string route;         
 };
 
 struct HTTPresponse
@@ -42,7 +45,7 @@ std::string hash_password(std::string password, std::string salt);
 std::vector<std::string> split(std::string str,std::string sep);
 HTTPrequest parse_request(const std::string request);
 std::string convert_to_lower(const std::string str);
-HTTPresponse route(const std::string request);
+HTTPresponse route(const std::string request, const std::string username);
 bool validMailboxChars(const std::string &str);
 bool doesMailboxExist(const std::string &s);
 std::string getNextNumber(const std::string &mailbox_name);

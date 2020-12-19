@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
     if (argc != 3)
     {
         std::cerr << "mail-out must have a two arguments: mailbox name and keep/remove. Aborting.\n";
-        return 1;
+        exit(MAIL_OUT_ERROR);
     }
 
     // Check if the mailbox exists
@@ -18,20 +18,20 @@ int main(int argc, char *argv[])
     if(keep_or_remove != MAIL_OUT_KEEP && keep_or_remove != MAIL_OUT_REMOVE)
     {
         std::cerr << "mail-out was not passed in correct keep/remove argument. Aborting...\n";
-        return MAIL_OUT_ERROR;
+        exit(MAIL_OUT_ERROR);
     }
 
     if(!validMailboxChars(username) || username.length() > MAILBOX_NAME_MAX || !doesMailboxExist(username))
     {
         std::cerr << "mail-out ould not identify the username. Aborting...\n";
-        return MAIL_OUT_ERROR;
+        exit(MAIL_OUT_ERROR);
     }
 
     // Check if the mailbox has any messages pending
     if(isMailboxEmpty(username))
     {
         std::cerr << username << " has 0 pending messages.\n";
-        return MAIL_OUT_EMPTY;
+        exit(MAIL_OUT_EMPTY);
     }
 
     // Get the earliest file (the one to output)
@@ -48,13 +48,13 @@ int main(int argc, char *argv[])
     else
     {
         std::cerr << "mail-out could not open earliest message.\n";
-        return MAIL_OUT_ERROR;
+        exit(MAIL_OUT_ERROR);
     }    
 
     if(buffer.empty())
     {
         std::cerr << "mailbox's earliest message is empty.\n";
-        return MAIL_OUT_ERROR;
+        exit(MAIL_OUT_ERROR);
     }
 
     // Write to tmp file
@@ -70,16 +70,16 @@ int main(int argc, char *argv[])
         else
         {
             std::cerr << "mail-out could not write to new tmp-msg file. Aborting...\n";
-            return MAIL_OUT_ERROR; 
+            exit(MAIL_OUT_ERROR); 
         }
 
         // Remove original file
         if( remove(file_to_output.c_str()) != 0 )
         {
             std::cerr << "Error deleting original message file. mail-out failed. Aborting...\n";
-            return MAIL_OUT_ERROR;
+            exit(MAIL_OUT_ERROR);
         }
     }
 
-    return MAIL_OUT_MSG_FOUND;  
+    exit(MAIL_OUT_MSG_FOUND);  
 }

@@ -79,13 +79,13 @@ std::string receive_some_data(BIO *bio)
     char buffer[1024];
     int len = BIO_read(bio, buffer, sizeof(buffer));
     if (len < 0) {
-        my::print_errors_and_throw("error in BIO_read");
+        my::print_errors_and_exit("Error in BIO_read.");
     } else if (len > 0) {
         return std::string(buffer, len);
     } else if (BIO_should_retry(bio)) {
         return receive_some_data(bio);
     } else {
-        my::print_errors_and_throw("empty BIO_read");
+        my::print_errors_and_exit("Empty BIO_read. Possible client authentication failure.");
     }
 }
 
@@ -233,6 +233,7 @@ std::string send_request(std::string chain_file, HTTPrequest request, bool clien
     if (BIO_do_handshake(ssl_bio.get()) <= 0) {
         my::print_errors_and_exit("Error in BIO_do_handshake");
     }
+
     // Verify the server's certificate
     my::verify_the_certificate(my::get_ssl(ssl_bio.get()), request.hostname.c_str());
 
