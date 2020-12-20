@@ -9,8 +9,6 @@
 #define MAIL_OUT_MSG_FOUND 0
 #define MAIL_OUT_EMPTY 1
 #define MAIL_OUT_ERROR 2
-#define CA_CERT_PATH "ca-cert.pem"
-#define CA_KEY_PATH "ca-key.pem"
 
 extern const std::string PASSWORD_FILE;
 extern const std::string TMP_CERT_FILE;
@@ -23,6 +21,12 @@ extern const std::string MAIL_OUT_PEEK;
 
 extern const std::string MAILBOX_PREFIX;
 extern const std::string CERTS_PREFIX;
+
+extern const std::string CA_CERT_PATH;
+extern const std::string CA_KEY_PATH;
+
+extern const std::string DEFAULT_PORT;
+extern const std::string CA_KEY_PASS;
 
 /**************************** OBJECTS ********************************/
 struct HTTPrequest

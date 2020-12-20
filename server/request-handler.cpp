@@ -258,20 +258,21 @@ int main()
         my::print_errors_and_exit("Error loading server private key");
     }
 
+    // Client-authenticated TLS options
     STACK_OF(X509_NAME) *list;
-    list = SSL_load_client_CA_file("ca-cert.pem");
+    list = SSL_load_client_CA_file(CA_CERT_PATH.c_str());
     if(list == NULL)
     {
         my::print_errors_and_exit("Error loading CA for client certificates.");
     }
     SSL_CTX_set_client_CA_list(ctx.get(), list);
-    SSL_CTX_load_verify_locations(ctx.get(), "ca-chain.cert.pem", NULL);
+    SSL_CTX_load_verify_locations(ctx.get(), CA_CERT_PATH.c_str(), NULL); // Was the chain file
     SSL_CTX_set_verify(ctx.get(), SSL_VERIFY_PEER, NULL);
 
     // Bind to port
-    auto accept_bio = my::UniquePtr<BIO>(BIO_new_accept("8080")); // 443 is reserved for root
+    auto accept_bio = my::UniquePtr<BIO>(BIO_new_accept(DEFAULT_PORT.c_str())); // 443 is reserved for root
     if (BIO_do_accept(accept_bio.get()) <= 0) {
-        my::print_errors_and_exit("Error in BIO_do_accept (binding to port 8080)");
+        my::print_errors_and_exit(("Error in BIO_do_accept binding to port " + DEFAULT_PORT).c_str());
     }
 
     static auto shutdown_the_socket = [fd = BIO_get_fd(accept_bio.get(), nullptr)]() {
@@ -319,15 +320,6 @@ int main()
             my::send_http_response(bio.get(), http_response);
         } catch (const std::exception& ex) {
             printf("Worker exited with exception:\n%s\n", ex.what());
-            std::string exception = ex.what();
-            
-            // Send back a response to client so they don't get core dumped
-            HTTPresponse http_response;
-            http_response.content_length = 0;
-            http_response.error = 1;
-            http_response.status_code = "400";
-            http_response.command_line = HTTP_VERSION + " 400 " +  exception; 
-            my::send_http_response(bio.get(), http_response);
         }
     }
     printf("\nClean exit!\n");

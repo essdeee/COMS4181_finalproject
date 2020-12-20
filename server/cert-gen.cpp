@@ -16,13 +16,11 @@ int pass_cb(char *buf, int size, int rwflag, void *u)
  {
 
      /* get pass phrase, length 'len' into 'tmp' */
-     std::string tmp = "int_ca_pass";
-
-     size_t len = strlen(tmp.c_str());
+     size_t len = strlen(CA_KEY_PASS.c_str());
 
      if (len > size)
          len = size;
-     memcpy(buf, tmp.c_str(), len);
+     memcpy(buf, CA_KEY_PASS.c_str(), len);
      return len;
  }
 
@@ -159,7 +157,7 @@ int main(int argc, char *argv[])
 		/* Load CA key and cert. */
 		EVP_PKEY *ca_key = NULL;
 		X509 *ca_crt = NULL;
-		if (!load_ca(CA_KEY_PATH, &ca_key, CA_CERT_PATH, &ca_crt)) 
+		if (!load_ca(CA_KEY_PATH.c_str(), &ca_key, CA_CERT_PATH.c_str(), &ca_crt)) 
 		{
 			std::cerr << "Failed to load CA certificate and/or key!\n";
 			return 1;
@@ -171,7 +169,7 @@ int main(int argc, char *argv[])
 		int ret = sign_csr(ca_key, ca_crt, &crt, req);
 		if (!ret) 
 		{
-			std::cerr << "Failed to generate key pair!\n";
+			std::cerr << "Failed to sign the CSR! Could be a problem with CA password.\n";
 			return 1;
 		}
 
