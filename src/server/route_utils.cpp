@@ -9,12 +9,12 @@
 #include "server_utils.h"
 
 // CONSTANTS AND MACROS
-const std::string VERIFY_PASS_PATH = "./verify-pass";
-const std::string UPDATE_PASS_PATH = "./update-pass";
-const std::string CERT_GEN_PATH = "./cert-gen";
-const std::string FETCH_CERT_PATH = "./fetch-cert";
-const std::string MAIL_OUT_PATH = "./mail-out";
-const std::string MAIL_IN_PATH = "./mail-in";
+const std::string VERIFY_PASS_PATH = "password/bin/verify-pass";
+const std::string UPDATE_PASS_PATH = "password/bin/update-pass";
+const std::string CERT_GEN_PATH = "client_certs/bin/cert-gen";
+const std::string FETCH_CERT_PATH = "client_certs/bin/fetch-cert";
+const std::string MAIL_OUT_PATH = "mail/bin/mail-out";
+const std::string MAIL_IN_PATH = "mail/bin/mail-in";
 
 const std::string GETCERT_ROUTE = "/getcert";
 const std::string CHANGEPW_ROUTE = "/changepw";

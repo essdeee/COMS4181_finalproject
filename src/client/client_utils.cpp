@@ -12,16 +12,16 @@
 #include <openssl/err.h>
 
 /**************************** CONSTANTS ******************************/
-const std::string SAVE_CERT_PATH = "client.pem";
-const std::string PRIVATE_KEY_PATH = "client.key.pem";
-const std::string CA_CERT_PATH = "ca.cert.pem"; // Trusted CA Cert for authenticating the server
-const std::string CAT_CERT_KEY_PATH = "client_cert_key.pem";
+const std::string SAVE_CERT_PATH = "keypair/client.pem";
+const std::string PRIVATE_KEY_PATH = "keypair/client.key.pem";
+const std::string CA_CERT_PATH = "keypair/cacert.pem"; // Trusted CA Cert for authenticating the server
+const std::string CAT_CERT_KEY_PATH = "keypair/client_cert_key.pem";
 
-const std::string SIGN_TMP = "sign-tmp.txt";
-const std::string TMP_DECODED_MSG = "decoded-msg-tmp.txt";
-const std::string TMP_DECODED_CERT = "decoded-cert-temp.pem";
-const std::string TMP_DECRYPTED_MSG = "decrypted-tmp.txt";
-const std::string VERIFIED_MSG = "recvd_msg.txt";
+const std::string SIGN_TMP = "tmp/sign-tmp.txt";
+const std::string TMP_DECODED_MSG = "tmp/decoded-msg-tmp.txt";
+const std::string TMP_DECODED_CERT = "tmp/decoded-cert-temp.pem";
+const std::string TMP_DECRYPTED_MSG = "tmp/decrypted-tmp.txt";
+const std::string VERIFIED_MSG = "tmp/recvd_msg.txt";
 
 /**************************** FUNCTIONS ******************************/
 void print_hex(const BYTE* byte_arr, int len)

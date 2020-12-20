@@ -14,20 +14,20 @@
 namespace fs = std::filesystem;
 
 // CONSTANTS AND MACROS
-const std::string PASSWORD_FILE = "shadow";
-const std::string TMP_CERT_FILE = "tmp-crt";
-const std::string TMP_MSG_FILE = "tmp-msg";
+const std::string PASSWORD_FILE = "password/pass/shadow";
+const std::string TMP_CERT_FILE = "client_certs/tmp/tmp-crt";  // TODO: Should change with chroot
+const std::string TMP_MSG_FILE = "mail/tmp/tmp-msg";           // TODO: Should change with chroot
 const std::string HTTP_VERSION = "HTTP/1.0";
-const std::string SERVER_CERT = "server_cert/certs/web_server.cert.pem";
-const std::string SERVER_PRIVATE_KEY = "server_cert/private/web_server.key.pem";
+const std::string SERVER_CERT = "server_cert/server-cert.pem";
+const std::string SERVER_PRIVATE_KEY = "server_cert/server-key.pem";
 const std::string MAIL_OUT_SEND = "send";
 const std::string MAIL_OUT_PEEK = "peek";
 
-const std::string MAILBOX_PREFIX = "./mail/";
-const std::string CERTS_PREFIX = "./certs/";
+const std::string MAILBOX_PREFIX = "mail/";
+const std::string CERTS_PREFIX = "client_certs/";
 
-const std::string CA_CERT_PATH = "ca.cert.pem";
-const std::string CA_KEY_PATH = "ca.key.pem";
+const std::string CA_CERT_PATH = "client_certs/ca-cert/ca.cert.pem";
+const std::string CA_KEY_PATH = "client_certs/ca-cert/ca.key.pem";
 const std::string CA_KEY_PASS = "pass";
 
 const std::string DEFAULT_PORT = "8080";
