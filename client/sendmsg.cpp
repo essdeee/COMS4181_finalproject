@@ -176,12 +176,27 @@ int main(int argc, char* argv[])
         // Sign the message (writes to a tmp .txt file)
         sign(CAT_CERT_KEY_PATH, msg_name, SIGN_TMP);
 
-        // Encrypt the message
-        std::vector<BYTE> signed_encrypted_bytes = encrypt(CAT_CERT_KEY_PATH, SIGN_TMP);
+        // Decode cert and write to temporary PEM file
+        if(save_cert(encrypt_cert_str, TMP_DECODED_CERT) == 0)
+        {
+            std::cerr << "Could not successfully save certificate.\n";
+            return 1;
+        }
 
+        // Encrypt the message
+        //std::vector<BYTE> signed_encrypted_bytes = encrypt(CAT_CERT_KEY_PATH, SIGN_TMP);
+        std::vector<BYTE> signed_encrypted_bytes = encrypt(TMP_DECODED_CERT, SIGN_TMP);
+
+        // Cleanup TMP files
         if(remove(SIGN_TMP.c_str()))
         {
-            std::cerr << "Error deleting signing tmp file.\n";
+            std::cerr << "Error deleting signing tmp file " + SIGN_TMP << std::endl;
+            return 1;
+        }
+
+        if(remove(TMP_DECODED_CERT.c_str()))
+        {
+            std::cerr << "Error deleting decoded crt file " + TMP_DECODED_CERT << std::endl;
             return 1;
         }
 
