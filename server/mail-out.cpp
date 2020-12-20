@@ -45,13 +45,15 @@ int main(int argc, char *argv[])
         // Get the earliest file (the one to output)
         std::string file_to_output = getEarliestNumberPath(username);
         std::ifstream f;
-        std::string buffer;
+        std::string sender;
+        std::string msg;
         f.open(file_to_output);
 
-        // Should only ever have a single line (base64 encoded message)
-        if(f.is_open())
+        // Messages should ALWAYS have two lines and only two lines: (1) sender (2) encrypted message
+        if(f.good())
         {
-            std::getline(f, buffer);
+            std::getline(f, sender);
+            std::getline(f, msg);
         }
         else
         {
@@ -59,18 +61,20 @@ int main(int argc, char *argv[])
             exit(MAIL_OUT_ERROR);
         }    
 
-        if(buffer.empty())
+        if(sender.empty() || msg.empty())
         {
-            std::cerr << "mailbox's earliest message is empty.\n";
+            std::cerr << "mailbox's earliest message is empty or formatted incorrectly.\n";
             exit(MAIL_OUT_ERROR);
         }
 
         // Write to tmp file
         std::ofstream new_file;
-        new_file.open("tmp-msg", std::ios::trunc);
+        new_file.open(TMP_MSG_FILE.c_str(), std::ios::trunc);
         if(new_file.is_open())
         {
-            new_file << buffer;
+            new_file << sender;
+            new_file << '\n';
+            new_file << msg;
             new_file.close();
         }
         else
@@ -85,6 +89,9 @@ int main(int argc, char *argv[])
             std::cerr << "Error deleting original message file. mail-out failed. Aborting...\n";
             exit(MAIL_OUT_ERROR);
         }
+
+        // If all goes well, we can return the msg_found status
+        exit(MAIL_OUT_MSG_FOUND);
     }
     else
     {

@@ -28,11 +28,15 @@ std::vector<std::string> recvmsg_response(std::string server_response)
     std::string response_string;
 
     // Check if content length matches 
+    /*
     if(!response.content_length.empty() && std::stoi(response.content_length) != response.body.size())
     {
+        std::cout << response.content_length << std::endl;
+        std::cout << response.body.size() << std::endl;
         cert_msg.push_back("!Content-length mismatch in response");
         return cert_msg;
     }
+    */
 
     // Handle error codes with response.valid
     if(response.valid)
@@ -77,25 +81,78 @@ int main(int argc, char* argv[])
     }
 
     std::string sender_cert_str = cert_msg[0];
-    std::string encrypted_encoded_msg = cert_msg[1];
+    std::string encoded_encrypted_signed_msg = cert_msg[1];
 
-    // Decode message to BYTE vector
+    // Decode message to BYTE vector and write to TMP file
+    std::vector<BYTE> decoded_bytes = base64_decode(encoded_encrypted_signed_msg);
+    std::ofstream outfile(TMP_DECODED_MSG, std::ios::out | std::ios::binary);
+    if(outfile.good())
+    {
+        outfile.write((char *) decoded_bytes.data(), decoded_bytes.size());
+    }
+    else
+    {
+        std::cerr << "Could not successfully write temp message to " + TMP_DECODED_MSG << std::endl;
+        return 1;
+    }
 
-    // 
-    std::vector<BYTE> decoded_bytes = base64_decode(encrypted_encoded_msg);
-    std::ofstream outfile("decoded.txt", std::ios::out | std::ios::binary);
-    outfile.write((char *) decoded_bytes.data(), decoded_bytes.size());
+    // Decode cert and write to temporary PEM file
+    if(save_cert(sender_cert_str, TMP_DECODED_CERT) == 0)
+    {
+        std::cerr << "Could not successfully save certificate.\n";
+        return 1;
+    }
 
-    // TODO (Francis): 
-    // Decrypt message
-    std::string decrypted_msg;
+    // The message is now decoded, so it is of the form: Enc(Sign(m))
+    // DECRYPT:
+    if(decrypt(CAT_CERT_KEY_PATH, TMP_DECODED_MSG, TMP_DECRYPTED_MSG))
+    {
+        std::cerr << "Error decrypting data. Could not display received message.\n";
+        return 1;
+    }
 
-    // TODO (Francis):
-    // Verify signature on the message is the original sender's
-    // If not, we can print to cerr and return 1
+    // VERIFY:
+    if(verify(TMP_DECODED_CERT, TMP_DECRYPTED_MSG, VERIFIED_MSG))
+    {
+        std::cerr << "Error verifying data. Could not display received message.\n";
+        return 1;
+    }
 
-    // Display decrypted message to client
-    std::cout << decrypted_msg;
+    // Print the verified message to stdout!
+    std::cout << "recvmsg downloaded to: " + VERIFIED_MSG << std::endl;
+    std::ifstream recvdmsg;
+    recvdmsg.open(VERIFIED_MSG);
+    if(recvdmsg.good())
+    {
+        std::cout << "=== CONTENTS ===" << std::endl;
+        std::string line;
+        while(std::getline(recvdmsg, line))
+        {
+            std::cout << line << std::endl;
+        }
+        recvdmsg.close();
+    }
+    else
+    {
+        std::cout << "Could not open to display to stdout.\n";
+    }
+
+    // Cleanup tmp files
+    if(remove(TMP_DECODED_MSG.c_str()))
+    {
+        std::cerr << "Could not delete tmp file: " + TMP_DECODED_MSG << std::endl;
+        return 1;
+    }
+    if(remove(TMP_DECODED_CERT.c_str()))
+    {
+        std::cerr << "Could not delete tmp file: " + TMP_DECODED_CERT << std::endl;
+        return 1;
+    }
+    if(remove(TMP_DECRYPTED_MSG.c_str()))
+    {
+        std::cerr << "Could not delete tmp file: " + TMP_DECRYPTED_MSG << std::endl;
+        return 1;
+    }
 
     return 0;
 }

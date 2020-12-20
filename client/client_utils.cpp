@@ -19,6 +19,10 @@ const std::string CA_CERT_PATH = "ca.cert.pem"; // Trusted CA Cert for authentic
 const std::string CAT_CERT_KEY_PATH = "client_cert_key.pem";
 
 const std::string SIGN_TMP = "sign-tmp.txt";
+const std::string TMP_DECODED_MSG = "decoded-msg-tmp.txt";
+const std::string TMP_DECODED_CERT = "decoded-cert-temp.pem";
+const std::string TMP_DECRYPTED_MSG = "decrypted-tmp.txt";
+const std::string VERIFIED_MSG = "recvd_msg.txt";
 
 /**************************** FUNCTIONS ******************************/
 void print_hex(const BYTE* byte_arr, int len)
@@ -613,7 +617,7 @@ int verify(std::string cert_key, std::string file_to_verify, std::string verifie
         goto err;
     }
 
-    fprintf(stderr, "Verification Successful\n");
+    fprintf(stderr, "Verification Successful!\n");
 
     ret = 0;
 

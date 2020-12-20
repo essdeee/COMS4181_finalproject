@@ -438,75 +438,64 @@ HTTPresponse recvmsg_route(const std::string username, const std::string encoded
     int mail_out_return = call_server_program("mail-out", mail_out_args);
     if (mail_out_return == MAIL_OUT_EMPTY)
     {
-        std::cerr << "Message not found. mail-out failed.\n";
-        response.command_line = HTTP_VERSION + " 500" + " No messages pending on server end.";
-        response.status_code = "500";
-        response.error = true;
-        return response;
+        return server_error_response("mail-out", "No messages pending on server end.", "500");
     }
     else if (mail_out_return == MAIL_OUT_ERROR)
     {
-        std::cerr << "mail-out failed because of internal error.\n";
-        response.command_line = HTTP_VERSION + " 500" + " Mail delivery failed because internal error.";
-        response.status_code = "500";
-        response.error = true;
-        return response;
+        return server_error_response("mail-out", "Mail delivery failed because internal error. Please try again.", "500");
     }
     else
     {
-        std::cout << mail_out_return << std::endl;
-        // mail-out returned 0, so we can read the msg from the tmp file tmp-msg
-        std::string msg;
-        std::string encrypted_msg;
+        // mail-out exited with MAIL_OUT_MSG_FOUND, so we can read the msg from the tmp file tmp-msg
+        std::string encoded_encrypted_signed_msg;
         std::string sender;
         std::string cert;
 
         // Read the message from tmp file
+        std::string line;
+        std::string buffer;
         std::ifstream msgstream(TMP_MSG_FILE);
-        msgstream >> msg;
+        while(std::getline(msgstream, line))
+        {
+            buffer += line + "\n";
+        }
+        msgstream.close();
+
         if( remove( TMP_MSG_FILE.c_str() ) != 0 )
         {
-            std::cerr << "Error deleting tmp file. mail-out failed on server end. Aborting.\n";
-            response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
-            response.status_code = "500";
-            response.error = true;
-            return response;
+            return server_error_response("mail-out", "Error deleting tmp file on server end.", "500");
         }
 
         // Parse out the sender and the message
-        size_t newline = msg.find_first_of("\n");
-        sender = msg.substr(0, newline);
-        encrypted_msg = msg.substr(newline + 1); 
+        std::cout << buffer << std::endl;
+        std::vector<std::string> split_msg = split(buffer, "\n");
+        if(split_msg.size() != 2)
+        {
+            return server_error_response("mail-out", "Mail found but in incorrect format. Deleted from system.", "500");
+        }
+        sender = split_msg[0];
+        encoded_encrypted_signed_msg = split_msg[1];
 
-        // Fetch cert (contains public key to verify signature) for the sender
-        std::string encryptCert = "sign";
-        std::vector<std::string> fetch_cert_args {sender, encryptCert};
-
+        // Fetch cert (contains public key to verify signature) from the original sender
+        std::vector<std::string> fetch_cert_args {sender};
         if(call_server_program("fetch-cert", fetch_cert_args) == 0)
         {
+            // Fetch-cert already writes cert in base64 encoded format for you!
             std::ifstream infile(TMP_CERT_FILE);
             infile >> cert;
-
             if( remove( TMP_CERT_FILE.c_str() ) != 0 )
             {
-                std::cerr << "Error deleting tmp file. fetch-cert failed on server end. Aborting.\n";
-                response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
-                response.status_code = "500";
-                response.error = true;
-                return response;
+                return server_error_response("fetch-cert", "Error deleting tmp file on server end.", "500");
             }
+            infile.close();
         }
         else
         {
-            std::cerr << "Signing certificate could not be fetched (fetch-cert failed).";
-            response.command_line = HTTP_VERSION + " 500" + " Signing certificate could not be fetched on server end.";
-            response.status_code = "500";
-            response.error = true;
-            return response;
+            return server_error_response("fetch-cert", "Certificate for original sender (needed for verifying) could not be fetched on server end.", "500");
         }
 
         response.body += cert + "\n";
-        response.body += encrypted_msg;
+        response.body += encoded_encrypted_signed_msg;
     }
 
     response.command_line = HTTP_VERSION + " 200 OK";

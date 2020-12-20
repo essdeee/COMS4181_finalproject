@@ -14,6 +14,11 @@ extern const std::string CA_CERT_PATH;
 extern const std::string CAT_CERT_KEY_PATH;
 extern const std::string SIGN_TMP;
 
+extern const std::string TMP_DECODED_MSG;
+extern const std::string TMP_DECODED_CERT;
+extern const std::string TMP_DECRYPTED_MSG;
+extern const std::string VERIFIED_MSG;
+
 /**************************** DATA TYPES ****************************/
 typedef uint8_t BYTE;            // 8-bit byte
 

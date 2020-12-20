@@ -60,6 +60,7 @@ int main( int argc, const char* argv[] )
 		std::string crt_str = base64_encode(crt_bytes, crt_size);
 
 		write_file(crt_str, TMP_CERT_FILE);
+		return 0;
 	}
 	else
 	{
