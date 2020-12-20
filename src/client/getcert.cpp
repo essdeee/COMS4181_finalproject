@@ -7,7 +7,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "base64.h"
 
 HTTPrequest getcert_request(std::string username, std::string password, std::vector<BYTE> csr)
 {

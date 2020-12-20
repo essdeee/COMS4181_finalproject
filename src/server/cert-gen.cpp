@@ -8,7 +8,6 @@
 #include <openssl/rand.h>
 #include <openssl/x509v3.h>
 #include <vector>
-#include "base64.h"
 #include "server_utils.h"
 #include <cstring>
 

@@ -29,6 +29,8 @@ extern const std::string CA_KEY_PATH;
 extern const std::string DEFAULT_PORT;
 extern const std::string CA_KEY_PASS;
 
+typedef uint8_t BYTE;
+
 /**************************** OBJECTS ********************************/
 struct HTTPrequest
 {
@@ -70,4 +72,6 @@ HTTPresponse server_error_response(const std::string failure_program,
                                     const std::string error_message, 
                                     const std::string status_code);
 void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size);
+std::string base64_encode(BYTE const* buf, unsigned int bufLen);
+std::vector<BYTE> base64_decode(std::string const&);
 #endif

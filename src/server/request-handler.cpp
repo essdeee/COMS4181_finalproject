@@ -10,7 +10,6 @@
 #include <iostream>
 #include "server_utils.h"
 #include "route_utils.h"
-#include "base64.h"
 
 #include <openssl/bio.h>
 #include <openssl/err.h>

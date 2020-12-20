@@ -7,7 +7,6 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include "base64.h"
 
 HTTPrequest recvmsg_request()
 {

@@ -1,7 +1,6 @@
 #include "request_sender.cpp"
 #include "client_utils.h"
 #include "http_utils.h"
-#include "base64.h"
 #include <unistd.h>
 #include <string>
 #include <stdio.h>

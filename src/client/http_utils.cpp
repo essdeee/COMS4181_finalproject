@@ -1,6 +1,5 @@
 #include "http_utils.h"
 #include "client_utils.h"
-#include "base64.h"
 #include <sstream>
 #include <string.h>
 #include <stdio.h>

@@ -7,7 +7,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "base64.h"
 
 HTTPrequest sendmsg_encrypt_request(std::vector<std::string> recipients)
 {

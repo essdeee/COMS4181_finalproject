@@ -19,6 +19,8 @@ extern const std::string TMP_DECODED_CERT;
 extern const std::string TMP_DECRYPTED_MSG;
 extern const std::string VERIFIED_MSG;
 
+typedef uint8_t BYTE;
+
 /**************************** DATA TYPES ****************************/
 typedef uint8_t BYTE;            // 8-bit byte
 
@@ -39,5 +41,8 @@ int sign(std::string cert_key, std::string file_to_sign, std::string signed_file
 std::vector<BYTE> encrypt(std::string cert_key, std::string file_path);
 int decrypt(std::string cert_key, std::string file_path, std::string decrypted_file_path);
 int verify(std::string cert_key, std::string file_to_verify, std::string verified_file);
+
+std::string base64_encode(BYTE const* buf, unsigned long bufLen);
+std::vector<BYTE> base64_decode(std::string const&);
 
 #endif
