@@ -6,7 +6,7 @@ default_ca = CA_default
 
 [ CA_default ]
 # Directory and file locations.
-dir               = /home/fwh2110/install-test/certs/server/ca
+dir               = /home/fwh2110/final-code/COMS4181_finalproject/certs/server/ca
 certs             = $dir/certs
 crl_dir           = $dir/crl
 new_certs_dir     = $dir/newcerts
