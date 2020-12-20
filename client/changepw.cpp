@@ -73,6 +73,14 @@ int main(int argc, char* argv[])
     std::string username = argv[1];
     std::string old_password = getpass("Enter old password: ");
     std::string new_password = getpass("Enter new password: ");
+    std::string new_password_confirm = getpass("Enter new password again to confirm: ");
+
+    // Make sure they typed it in right twice
+    if(new_password != new_password_confirm)
+    {
+        std::cerr << "New password not typed in same twice. Please try again.\n";
+        return 1;
+    }
 
     // Validate username and password lengths
     if(username.length() > USERNAME_MAX && !validMailboxChars(username))
