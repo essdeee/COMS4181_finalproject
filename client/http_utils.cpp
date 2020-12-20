@@ -115,6 +115,10 @@ HTTPresponse parse_http_response(std::string server_response)
                 response.error_msg = "Server response invalidly formatted. Command line invalid.";
             }
         }
+        else if ( response_body_flag )
+        {
+            response.body += line + "\n";
+        }
         else if ( convert_to_lower(line).find("content-length:") != std::string::npos )
         {
             std::vector<std::string> split_content_len = split(line, ":");
@@ -142,10 +146,6 @@ HTTPresponse parse_http_response(std::string server_response)
                 response.error_msg = "Server response invalidly formatted. 300 redirect not found.";
             }
         }
-        else if ( response_body_flag )
-        {
-            response.body = line + "\n";
-        }
         else
         {
             continue;
@@ -164,5 +164,6 @@ HTTPresponse parse_http_response(std::string server_response)
         response.error_msg = "ERROR. Server responded with status:\n" + response.status_code + ": " + response.status_text;
     }
 
+    // We put one more newline than was in the response during parsing, so take it out
     return response;
 }

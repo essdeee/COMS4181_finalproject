@@ -23,8 +23,8 @@ extern const std::string FETCH_SIGN_CERT;
 /**************************** FUNCTION DECLARATIONS *****************/
 HTTPresponse getcert_route(int content_length, std::string request_body);
 HTTPresponse changepw_route(int content_length, std::string request_body);
-HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body);
-HTTPresponse sendmsg_message_route(int content_length, std::string request_body);
-HTTPresponse recvmsg_route(std::string username);
+HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body, const std::string username, const std::string encoded_client_cert);
+HTTPresponse sendmsg_message_route(int content_length, std::string request_body, const std::string username, const std::string encoded_client_cert);
+HTTPresponse recvmsg_route(const std::string username, const std::string encoded_client_cert);
 
 #endif

@@ -10,6 +10,7 @@
 #include <iostream>
 #include "server_utils.h"
 #include "route_utils.h"
+#include "base64.h"
 
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -168,6 +169,12 @@ HTTPresponse verify_the_certificate(SSL *ssl)
         return http_response;
     }
 
+    // Save the cert as an encoded base64 cert string to authenticate later (when running the route)
+    uint8_t *crt_bytes = NULL;
+    size_t crt_size = 0;
+    crt_to_pem(cert, &crt_bytes, &crt_size);
+    std::string client_cert_str = base64_encode(crt_bytes, crt_size);
+
     // Extract the common name from the cert
     X509_NAME *subject_name_obj = X509_get_subject_name(cert);
     if (subject_name_obj == nullptr)
@@ -214,6 +221,7 @@ HTTPresponse verify_the_certificate(SSL *ssl)
     }
 
     http_response.error = 0;
+    http_response.body = client_cert_str;
     http_response.command_line = username;
     return http_response;
 }
@@ -293,6 +301,7 @@ int main()
 
             // client-auth TLS logic for recvmsg and sendmsg
             std::string username;
+            std::string encoded_client_cert;
             if((parsed_request.route == RECVMSG_ROUTE || 
                 parsed_request.route == SENDMSG_ENCRYPT_ROUTE || 
                 parsed_request.route == SENDMSG_MESSAGE_ROUTE))
@@ -308,13 +317,15 @@ int main()
                 else
                 {
                     username = client_auth_response.command_line;
-                    std::cout << "Client authenticated as: " << username << std::endl;
+                    encoded_client_cert = client_auth_response.body;
+                    std::cout << "Client claims to authenticate as: " << username << std::endl;
                 }
             }
 
             // Do the route function
-            HTTPresponse http_response = route(request, username);
+            HTTPresponse http_response = route(request, username, encoded_client_cert);
 
+            // REMOVE THIS AFTER WE'RE DONE TESTING (shows plaintext passwords)
             printf("Got request:\n");
             printf("%s\n", request.c_str());
             my::send_http_response(bio.get(), http_response);

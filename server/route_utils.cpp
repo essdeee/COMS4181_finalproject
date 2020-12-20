@@ -75,7 +75,7 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         else if ( program_name == "fetch-cert" )
         {
             close(pipe_fd[0]);               // Close the reading end of the pipe
-            status = execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
+            status = execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), NULL);
         }
         else if ( program_name == "mail-out" )
         {
@@ -84,7 +84,7 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         }
         else if ( program_name == "mail-in" )
         {
-            status = execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), NULL);
+            status = execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
     } 
     else 
@@ -93,7 +93,7 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
         close(pipe_fd[0]); // Close the reading end of the pipe
         if ( program_name == "mail-in")
         {   
-            write(pipe_fd[1], args[1].c_str(), strlen(args[1].c_str()) + 1);
+            write(pipe_fd[1], args[2].c_str(), strlen(args[2].c_str()));
         }
         close(pipe_fd[1]); // Close the writing end of the pipe
         
@@ -101,6 +101,42 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
     }
 
     return WEXITSTATUS(status);
+}
+
+HTTPresponse validate_client_certificate(const std::string failure_program, const std::string username, const std::string encoded_client_cert)
+{
+    std::vector<std::string> fetch_cert_args = {username};
+    bool valid = false;
+    if(call_server_program("fetch-cert", fetch_cert_args) == 0)
+    {
+        // Extract the client cert on the server
+        std::string server_client_cert;
+        std::ifstream infile(TMP_CERT_FILE);
+        infile >> server_client_cert;
+        infile.close();
+
+        // Delete tmp file after getting the encoded cert from fetch-cert
+        if( remove( TMP_CERT_FILE.c_str() ) != 0 )
+        {
+            return server_error_response(failure_program, "Error deleting tmp file while validating client cert.", "500");
+        }
+
+        valid = (server_client_cert == encoded_client_cert);
+    }
+    else
+    {
+        return server_error_response(failure_program, "Could not fetch client certificate from client's directory on server end to validate.", "500");
+    }
+
+    // Client certificate could have validated with the one in directory or not
+    if(!valid)
+    {
+        return server_error_response(failure_program, "Client certificate did not match existing certificate on serer.", "500");
+    }
+
+    HTTPresponse response;
+    response.error = false;
+    return response;
 }
 
 HTTPresponse getcert_route(int content_length, std::string request_body)
@@ -260,52 +296,60 @@ HTTPresponse changepw_route(int content_length, std::string request_body)
     return response;
 }
 
-HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body)
+HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body, const std::string username, const std::string encoded_client_cert)
 {
-    HTTPresponse response;
-    response.error = false;
+    // Perform the final validation - does the certificate match the one on file?
+    HTTPresponse response = validate_client_certificate("sendmsg_encrypt_route", username, encoded_client_cert);
+    if(response.error)
+    {
+        std::cerr << "Client authentication failed at validation step.\n";
+        return response;
+    }
+    std::cout << "Client authentication successfully passed as: " + username << std::endl;
+
+    // Make sure the content length is as expected
+    if(content_length != request_body.size())
+    {
+        return server_error_response("sendmsg_encrypt_route", "Request body and content-length mismatch", "400");
+    }
 
     // Body is just a list of recipients
     std::vector<std::string> recipients = split(request_body, "\n");
     if (recipients.size() == 0)
     {
-        std::cerr << "Request body not in valid format for sendmsg_encrypt. Aborting.\n";
-        response.command_line = HTTP_VERSION + " 400" + " Request body not in valid format for sendmsg_encrypt.";
-        response.status_code = "400";
-        response.error = true;
-        return response;
+        return server_error_response("sendmsg_encrypt_route", "Request body not in valid format for sendmsg_encrypt.", "400");
     }
 
     // For each recipient, fetch the encryption certificate
     for (std::string recipient : recipients)
     {
-        std::string encryptCert = FETCH_ENCRYPT_CERT;
-        std::vector<std::string> fetch_cert_args {recipient, encryptCert};
+        // Validate each reicpient to make sure they're kosher
+        if(recipient.length() > MAILBOX_NAME_MAX || !validMailboxChars(recipient))
+        {
+            return server_error_response("sendmsg_encrypt_route", "Client sent invalidly formatted recipient name in request body. ALL recipients must be valid.", "400");
+        }
 
+        // Call fetch-cert to get the current recipient's cert
+        std::vector<std::string> fetch_cert_args {recipient};
         if(call_server_program("fetch-cert", fetch_cert_args) == 0)
         {
+            // Get the cert from tmp file if signalled 0
             std::string cert;
             std::ifstream infile(TMP_CERT_FILE);
             infile >> cert;
+            infile.close();
 
             if( remove( TMP_CERT_FILE.c_str() ) != 0 )
             {
-                std::cerr << "Error deleting tmp file. getcert failed on server end. Aborting.\n";
-                response.command_line = HTTP_VERSION + " 500" + " Error deleting tmp file on server end.";
-                response.status_code = "500";
-                response.error = true;
-                return response;
+                return server_error_response("sendmsg_encrypt_route", "Error deleting tmp file on server end.", "500");
             }
 
+            // APPEND EACH CERT TO REQUEST BODY
             response.body += cert + "\n";
         }
         else
         {
-            std::cerr << "Encryption certificate could not be fetched. fetch-cert failed.";
-            response.command_line = HTTP_VERSION + " 500" + " Encryption certificate could not be fetched for user: " + recipient;
-            response.status_code = "500";
-            response.error = true;
-            return response;
+            return server_error_response("sendmsg_encrypt_route", "Encryption certificate could not be fetched for user: " + recipient, "500");
         }
     }
 
@@ -315,20 +359,26 @@ HTTPresponse sendmsg_encrypt_route(int content_length, std::string request_body)
     return response;
 }
 
-HTTPresponse sendmsg_message_route(int content_length, std::string request_body)
+HTTPresponse sendmsg_message_route(int content_length, std::string request_body, const std::string username, const std::string encoded_client_cert)
 {
-    HTTPresponse response;
-    response.error = false;
+    // Perform the final validation - does the certificate match the one on file?
+    HTTPresponse response = validate_client_certificate("sendmsg_message_route", username, encoded_client_cert);
+    if(response.error)
+    {
+        return response;
+    }
+
+    // Make sure the content length is as expected
+    if(content_length != request_body.size())
+    {
+        return server_error_response("sendmsg_message_route", "Request body and content-length mismatch", "400");
+    }
 
     // Split body of request into vector of {recipients, msg1, msg2, ... msg_n}
     std::vector<std::string> request_body_split = split(request_body, "\n");
     if(request_body_split.size() < 2)
     {
-        std::cerr << "Request body not in valid format for sendmsg_message. Aborting.\n";
-        response.command_line = HTTP_VERSION + " 400" + " Request body not in valid format for sendmsg_message.";
-        response.status_code = "400";
-        response.error = true;
-        return response;
+        return server_error_response("sendmsg_message_route", "Request body not in valid format for sendmsg_message.", "400");
     }
 
     // Parse out the recipients and the corresponding messages
@@ -336,32 +386,37 @@ HTTPresponse sendmsg_message_route(int content_length, std::string request_body)
     std::vector<std::string> messages;
     std::string unparsed_recipients = request_body_split[0];
     recipients = split(unparsed_recipients, ":");
-    request_body_split.erase(request_body_split.begin());
+    request_body_split.erase(request_body_split.begin()); // Pops off the first entry in vector
     messages = request_body_split;
-
     if ( recipients.size() != messages.size() )
     {
-        std::cerr << "Number of recipients does not match number of messages. Invalid client request.\n";
-        response.command_line = HTTP_VERSION + " 400" + " Number of recipients does not match number of messages.";
-        response.status_code = "400";
-        response.error = true;
-        return response;
+        return server_error_response("sendmsg_message_route", "Number of recipients does not match number of messages.", "400");
     }
 
-    // TODO: SOMEHOW GET THE SENDER FROM THE CLIENT'S CERTIFICATE
-
+    // Deliver to recipients and keep track of failures
+    std::vector<std::string> failed_recipients;
     for ( int i = 0; i < recipients.size(); i++ )
     {
-        std::vector<std::string> mail_in_args {recipients[i], messages[i]};
+        std::vector<std::string> mail_in_args {recipients[i], username, messages[i]};
 
         if(call_server_program("mail-in", mail_in_args) != 0)
         {
-            std::cerr << "Message could not be successfully delivered. mail-in failed.\n";
-            response.command_line = HTTP_VERSION + " 500" + " Message could not be successfully delivered on server end.";
-            response.status_code = "500";
-            response.error = true;
-            return response;
+            std::cerr << "Message could not be successfully delivered to " + recipients[i] << " mail-in failed.\n";
+            failed_recipients.push_back(recipients[i]);
+            return server_error_response("mail-in", "Message could not be successfully delivered on server end.", "500");
         }
+    }
+
+    // If any failed, send an error response instead
+    if(!failed_recipients.empty())
+    {
+        std::string delivery_fail_message = "Message could not be successfully delivered to: ";
+        for (std::string recipient : failed_recipients)
+        {
+            delivery_fail_message += recipient + " ";
+        }
+        delivery_fail_message += ". All other messages delivered.\n";
+        return server_error_response("mail-in", delivery_fail_message, "500");
     }
 
     response.command_line = HTTP_VERSION + " 200 OK";
@@ -370,10 +425,14 @@ HTTPresponse sendmsg_message_route(int content_length, std::string request_body)
     return response;
 }
 
-HTTPresponse recvmsg_route(std::string username)
+HTTPresponse recvmsg_route(const std::string username, const std::string encoded_client_cert)
 {
-    HTTPresponse response;
-    response.error = false;
+    // Perform the final validation - does the certificate match the one on file?
+    HTTPresponse response = validate_client_certificate("recvmsg_route", username, encoded_client_cert);
+    if(response.error)
+    {
+        return response;
+    }
 
     std::vector<std::string> mail_out_args {username, MAIL_OUT_SEND};
     int mail_out_return = call_server_program("mail-out", mail_out_args);

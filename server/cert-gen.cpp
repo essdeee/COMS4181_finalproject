@@ -108,17 +108,6 @@ free:
 	return 0;
 }
 
-void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size)
-{
-	/* Convert signed certificate to PEM format. */
-	BIO *bio = BIO_new(BIO_s_mem());
-	PEM_write_bio_X509(bio, crt);
-	*crt_size = BIO_pending(bio);
-	*crt_bytes = (uint8_t *)malloc(*crt_size + 1);
-	BIO_read(bio, *crt_bytes, *crt_size);
-	BIO_free_all(bio);
-}
-
 void print_bytes(uint8_t *data, size_t size)
 {
 	for (size_t i = 0; i < size; i++) {
@@ -151,9 +140,6 @@ int main(int argc, char *argv[])
 		// Cleanup
 		BIO_free(bio);
 
-		//const char *ca_key_path = CA_KEY_PATH;
-		//const char *ca_crt_path = CA_CERT_PATH;
-
 		/* Load CA key and cert. */
 		EVP_PKEY *ca_key = NULL;
 		X509 *ca_crt = NULL;
@@ -174,8 +160,6 @@ int main(int argc, char *argv[])
 		}
 
 		BIO *out = NULL, *bio_err = NULL;
-		//TODO: this will be folder with cert i.e. addleness/sign.pem
-		// Will require passing in username as argument
 		std::string cert_name = username + ".pem";
 		std::string cert_path = CERTS_PREFIX + cert_name;
 		const char  *cPath = cert_path.c_str();

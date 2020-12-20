@@ -5,23 +5,25 @@
 int main(int argc, char *argv[])
 {
     // Parse arguments
-    if (argc != 2)
+    if (argc != 3)
     {
-        std::cerr << "mail-in must have one argument: the recipient.\n";
+        std::cerr << "mail-in must have two argument: the recipient and the sender.\n";
         return 1;
     }
 
     // Parse and validate the recipient
     std::string recipient = argv[1];
+    std::string sender = argv[2];
     if(!validMailboxChars(recipient) || recipient.length() > MAILBOX_NAME_MAX || !doesMailboxExist(recipient))
     {
         std::cerr << "mail-in could not identify the recipient. Aborting...\n";
         return 1;
     }
 
-    // Read the input message (preventing overflow)
+    // Read the input message (preventing overflow). Should only be a single line.
     std::string msg;
     std::getline(std::cin, msg);
+    std::cout << "MAIL-IN SIZE:" << msg.size() << std::endl;
 
     // Get next message number in mailbox
     std::string next_file_name = getNextNumber(recipient);
@@ -41,6 +43,8 @@ int main(int argc, char *argv[])
     if(new_file.is_open())
     {
         // Format is sender<newline>mesage 
+        new_file << sender;
+        new_file << '\n';
         new_file << msg;
         new_file.close();
     }

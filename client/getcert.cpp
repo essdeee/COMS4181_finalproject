@@ -5,6 +5,7 @@
 #include <string>
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include "base64.h"
 
@@ -28,6 +29,14 @@ std::string getcert_response(std::string server_response)
     // Parse and get error code if there is one
     HTTPresponse response = parse_http_response(server_response);
     std::string response_string;
+
+    // Check if content length matches 
+    /*
+    if(!response.content_length.empty() && std::stoi(response.content_length) != response.body.size())
+    {
+        return "!Content-length mismatch in response";
+    }
+    */
 
     // Handle error codes with response.valid
     if(response.valid)
@@ -105,6 +114,17 @@ int main(int argc, char* argv[])
     {
         std::cout << "Certificate successfully saved as " + SAVE_CERT_PATH + "\n";
     }
+
+    // Append the key to the cert for crypto methods
+    if(remove(CAT_CERT_KEY_PATH.c_str()))
+    {
+        std::cerr << "Could not remove existing catted cert_key in " + CAT_CERT_KEY_PATH << std::endl;
+        return 1;
+    }
+
+    appendFile(CAT_CERT_KEY_PATH, "client.pem");
+    appendFile(CAT_CERT_KEY_PATH, PRIVATE_KEY_PATH);
+    std::cout << "Appending certificate to key to make " + CAT_CERT_KEY_PATH << std::endl;
     
     return 0;
 }

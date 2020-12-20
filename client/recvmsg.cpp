@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <fstream>
 #include "base64.h"
 
 HTTPrequest recvmsg_request()
@@ -25,6 +26,13 @@ std::vector<std::string> recvmsg_response(std::string server_response)
     // Parse and get error code if there is one
     HTTPresponse response = parse_http_response(server_response);
     std::string response_string;
+
+    // Check if content length matches 
+    if(!response.content_length.empty() && std::stoi(response.content_length) != response.body.size())
+    {
+        cert_msg.push_back("!Content-length mismatch in response");
+        return cert_msg;
+    }
 
     // Handle error codes with response.valid
     if(response.valid)
@@ -69,7 +77,14 @@ int main(int argc, char* argv[])
     }
 
     std::string sender_cert_str = cert_msg[0];
-    std::string encrypted_msg = cert_msg[1];
+    std::string encrypted_encoded_msg = cert_msg[1];
+
+    // Decode message to BYTE vector
+
+    // 
+    std::vector<BYTE> decoded_bytes = base64_decode(encrypted_encoded_msg);
+    std::ofstream outfile("decoded.txt", std::ios::out | std::ios::binary);
+    outfile.write((char *) decoded_bytes.data(), decoded_bytes.size());
 
     // TODO (Francis): 
     // Decrypt message

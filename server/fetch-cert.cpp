@@ -30,42 +30,22 @@ free:
 	return 1;
 }
 
-void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size)
-{
-	/* Convert signed certificate to PEM format. */
-	BIO *bio = BIO_new(BIO_s_mem());
-	PEM_write_bio_X509(bio, crt);
-	*crt_size = BIO_pending(bio);
-	*crt_bytes = (uint8_t *)malloc(*crt_size + 1);
-	BIO_read(bio, *crt_bytes, *crt_size);
-	BIO_free_all(bio);
-}
-
-
 int main( int argc, const char* argv[] )
 {
-	if(argc == 3)
+	if(argc == 2)
     {
 		std::string username = argv[1];
-		std::string cert_type = argv[2];
 		X509 *crt = NULL;
-		std::string cert_filename;
+		std::string cert_filename = username + ".pem";
 
-		if(cert_type == "sign")
+		// Make sure username is valid before passing it into anything
+		if(username.length() > MAILBOX_NAME_MAX || !validMailboxChars(username))
 		{
-			cert_filename = "sign.pem";
+			std::cerr << "Username not valid in fetch-cert call.\n";
+			return 1; 
 		}
-		else if(cert_type == "encrypt")
-		{
-			cert_filename = "encrypt.pem";
-		}
-		else
-		{
-			std::cerr << "fetch-cert received invalid cert_type argument.\n";
-			return 1;
-		}
-		
-		std::string cert_path = username + "/" + cert_filename;
+
+		std::string cert_path = CERTS_PREFIX + cert_filename;
 		if (load_cert(cert_path.c_str(), &crt))
 		{
 			std::cerr << "fetch-cert could not load the certificate for user: " + username << std::endl;
@@ -75,9 +55,11 @@ int main( int argc, const char* argv[] )
 		uint8_t *crt_bytes = NULL;
 		size_t crt_size = 0;
 		crt_to_pem(crt, &crt_bytes, &crt_size);
+
+		// Cert is written in ENCODED format!
 		std::string crt_str = base64_encode(crt_bytes, crt_size);
 
-		write_file(crt_str, "tmp-crt");
+		write_file(crt_str, TMP_CERT_FILE);
 	}
 	else
 	{

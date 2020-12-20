@@ -5,6 +5,7 @@
 #include <string>
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include "base64.h"
 
@@ -31,6 +32,13 @@ std::vector<std::string> sendmsg_encrypt_response(std::string server_response)
     // Parse and get error code if there is one
     HTTPresponse response = parse_http_response(server_response);
     std::string response_string;
+
+    // Check if content length matches 
+    if(!response.content_length.empty() && std::stoi(response.content_length) != response.body.size())
+    {
+        encrypt_certs.push_back("!Content-length mismatch in response");
+        return encrypt_certs;
+    }
 
     // Handle error codes with response.valid
     if(response.valid)
@@ -64,17 +72,17 @@ HTTPrequest sendmsg_message_request(std::vector<std::string> messages, std::vect
     request.verb = "POST";
     request.port = DEFAULT_PORT;
     request.hostname = HOSTNAME;
-    request.command_line = "POST " + HTTPS_PREFIX + ":" + HOSTNAME + SENDMSG_MESSAGE_ROUTE + " HTTP/1.0"; // Change to POST
+    request.command_line = "POST " + HTTPS_PREFIX + HOSTNAME + SENDMSG_MESSAGE_ROUTE + " HTTP/1.0"; // Change to POST
     for ( std::string recipient : recipients )
     {
         request.body += recipient + ":";
     }
+    request.body += "\n";
     for (std::string message : messages)
     {
         request.body += message + "\n";
     }
     request.content_length = std::to_string(request.body.length());
-
     return request;
 }
 
@@ -83,6 +91,12 @@ std::string sendmsg_message_response(std::string server_response)
     // Parse and get error code if there is one
     HTTPresponse response = parse_http_response(server_response);
     std::string response_string;
+
+    // Check if content length matches 
+    if(!response.content_length.empty() && std::stoi(response.content_length) != response.body.size())
+    {
+        return "!Content-length mismatch in response";
+    }
 
     if(response.valid)
     {
@@ -98,43 +112,46 @@ std::string sendmsg_message_response(std::string server_response)
 
 int main(int argc, char* argv[])
 {
-    if(argc < 2)
+    if(argc < 3)
     {
-        std::cerr << "Incorrect number of args. Please enter recipients to send your message to.\n";
+        std::cerr << "Incorrect number of args. Expected usage: ./sendmsg <message path> <recipient 1> <recipient 2> ... <recipient n>.\n";
         return 1;
     }
 
-    // Parse out the recipients from the command
+    // Parse out the file name and recipients from the command
     std::vector<std::string> recipients;
-    for (int i = 1; i < argc; i++)
+    std::string msg_name = argv[1];
+    for (int i = 2; i < argc; i++)
     {
-        recipients.push_back(argv[i]);
+        std::string recipient = argv[i];
+
+        // Validate username length and characters
+        if(recipient.length() > USERNAME_MAX && !validMailboxChars(recipient))
+        {
+            std::cerr << "Username invalid (too long or invalid characters). Aborting.\n";
+            return 1;
+        }
+        recipients.push_back(recipient);
     }
 
-    // Read the input message (preventing overflow)
-    std::string line;
-    std::string message;
-    std::vector<std::string> lines;
-    while (std::getline(std::cin, line))
+    // Check if message filepath exists
+    std::ifstream f(msg_name);
+    if(!f.good())
     {
-        if (line.empty())
-        {
-            message += "\n";
-        }
-        else
-        {
-            message += line + "\n"; // getline removes newline
-        }
+        f.close();
+        std::cerr << "Message " + msg_name + " does not exist or could not open.\n";
+        return 1;
     }
+    f.close();
 
     // (1) Generate sendmsg_encrypt HTTP request
     HTTPrequest request = sendmsg_encrypt_request(recipients);
 
     // Send client request and receive response
-    std::string response = send_request(request, true); // Should be client-auth
+    std::string encrypt_response = send_request(request, true); // Should be client-auth
     
     // Write encryption certs (from server response) to file
-    std::vector<std::string> encrypt_certs = sendmsg_encrypt_response(response);
+    std::vector<std::string> encrypt_certs = sendmsg_encrypt_response(encrypt_response);
 
     // Check if error in response
     if( encrypt_certs.size() == 1 && encrypt_certs[0][0] == '!' ) // ! is not in base64 encoding
@@ -144,22 +161,43 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // (2) Generate sendmsg_message HTTP request
-    // Encrypt each message with the encryption certs
-    std::vector<std::string> signed_encrypted_messages;
-    for (std::string encrypt_cert_str : encrypt_certs)
+    // Did we get all the recipient certs we wanted?
+    if( encrypt_certs.size() != recipients.size())
     {
-        // Sign the message
-        // Encrypt the message
+        std::cerr << "ERROR: id not receive all the encryption certs from all recipients.\n";
+        std::cerr << "Number of certs received: " + encrypt_certs.size() << std::endl;
+        std::cerr << "Number of recipients intended: " + recipients.size() << std::endl;
     }
 
-    request = sendmsg_message_request(signed_encrypted_messages, recipients);
+    // Encrypt the message with the encryption certs
+    std::vector<std::string> signed_encrypted_encoded_messages;
+    for (std::string encrypt_cert_str : encrypt_certs)
+    {
+        // Sign the message (writes to a tmp .txt file)
+        sign(CAT_CERT_KEY_PATH, msg_name, SIGN_TMP);
+
+        // Encrypt the message
+        std::vector<BYTE> signed_encrypted_bytes = encrypt(CAT_CERT_KEY_PATH, SIGN_TMP);
+
+        if(remove(SIGN_TMP.c_str()))
+        {
+            std::cerr << "Error deleting signing tmp file.\n";
+            return 1;
+        }
+
+        // Encode the signed-encrypted message with base64 encoding
+        std::string signed_encrypted_encoded_msg = base64_encode(signed_encrypted_bytes.data(), signed_encrypted_bytes.size());
+        signed_encrypted_encoded_messages.push_back(signed_encrypted_encoded_msg);
+    }
+
+    // (2) Generate sendmsg_message HTTP request
+    request = sendmsg_message_request(signed_encrypted_encoded_messages, recipients);
 
     // Send client request and receive response
-    response = send_request(request, false);
+    std::string message_response = send_request(request, true);
 
     // Parse the server response 
-    std::string parsed_response = sendmsg_message_response(response);
+    std::string parsed_response = sendmsg_message_response(message_response);
 
     // Check if error in response
     if( parsed_response[0] == '!' ) // ! is not in base64 encoding

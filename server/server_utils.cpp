@@ -4,6 +4,9 @@
 #include <vector>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/x509v3.h>
 #include <bits/stdc++.h> 
 #include "server_utils.h"
 #include "route_utils.h"
@@ -234,7 +237,7 @@ HTTPrequest parse_request(const std::string request)
     return parsed_request;
 }
 
-HTTPresponse route(const std::string request, const std::string username)
+HTTPresponse route(const std::string request, const std::string username, const std::string encoded_client_cert)
 {
     // HTTPS response at the end
     HTTPresponse response;
@@ -253,15 +256,15 @@ HTTPresponse route(const std::string request, const std::string username)
     }
     else if(parsed_request.route == SENDMSG_ENCRYPT_ROUTE)
     {
-        response = sendmsg_encrypt_route(std::stoi(parsed_request.content_length), parsed_request.body);
+        response = sendmsg_encrypt_route(std::stoi(parsed_request.content_length), parsed_request.body, username, encoded_client_cert);
     }
     else if(parsed_request.route == SENDMSG_MESSAGE_ROUTE)
     {
-        response = sendmsg_message_route(std::stoi(parsed_request.content_length), parsed_request.body);
+        response = sendmsg_message_route(std::stoi(parsed_request.content_length), parsed_request.body, username, encoded_client_cert);
     }
     else if(parsed_request.route == RECVMSG_ROUTE)
     {
-        response = recvmsg_route(username);
+        response = recvmsg_route(username, encoded_client_cert);
     }
     else
     {
@@ -474,4 +477,15 @@ HTTPresponse server_error_response(const std::string failure_program,
     error_response.status_code = status_code;
     error_response.error = true;
     return error_response;
+}
+
+void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size)
+{
+	/* Convert signed certificate to PEM format. */
+	BIO *bio = BIO_new(BIO_s_mem());
+	PEM_write_bio_X509(bio, crt);
+	*crt_size = BIO_pending(bio);
+	*crt_bytes = (uint8_t *)malloc(*crt_size + 1);
+	BIO_read(bio, *crt_bytes, *crt_size);
+	BIO_free_all(bio);
 }

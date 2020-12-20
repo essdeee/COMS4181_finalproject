@@ -209,7 +209,6 @@ std::string send_request(HTTPrequest request, bool client_auth)
     }
     
     // Verify the CA chain to verify the server
-    // TODO: NO LONGER A CHAIN FILE (just a root CA)
     if (SSL_CTX_load_verify_locations(ctx.get(), CA_CERT_PATH.c_str(), nullptr) != 1) {
         my::print_errors_and_exit("Error setting up trust store");
     }

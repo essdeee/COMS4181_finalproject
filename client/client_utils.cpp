@@ -9,11 +9,16 @@
 #include <iostream>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
+#include <openssl/cms.h>
+#include <openssl/err.h>
 
 /**************************** CONSTANTS ******************************/
 const std::string SAVE_CERT_PATH = "client.pem";
 const std::string PRIVATE_KEY_PATH = "client.key.pem";
 const std::string CA_CERT_PATH = "ca.cert.pem"; // Trusted CA Cert for authenticating the server
+const std::string CAT_CERT_KEY_PATH = "client_cert_key.pem";
+
+const std::string SIGN_TMP = "sign-tmp.txt";
 
 /**************************** FUNCTIONS ******************************/
 void print_hex(const BYTE* byte_arr, int len)
@@ -158,7 +163,7 @@ std::vector<BYTE> gen_csr(std::string client_name)
     const char      *szOrganization = "Columbia University";
     std::string      szCommonBase = "mail client ";
     //printf("%s\n", (szCommonBase + client_name).c_str());
-    const char      *szCommon = "mail client"; //(szCommonBase + client_name).c_str();
+    const char      *szCommon = client_name.c_str(); //(szCommonBase + client_name).c_str();
     //printf("%s\n", (const unsigned char*)szCommon);
     const char      *szPath = "csr-1.pem";
 
@@ -177,7 +182,7 @@ std::vector<BYTE> gen_csr(std::string client_name)
     if(ret != 1){
         goto free_all;
     }
-    private_key_to_pem(r, "thisdoesntwork.key.pem");
+    private_key_to_pem(r, "client.key.pem");
 
     // 2. set version of x509 req
     x509_req = X509_REQ_new();
@@ -267,7 +272,364 @@ int save_cert(std::string cert_str, std::string file_name)
     const char *cPath = file_name.c_str(); 
     out = BIO_new_file(cPath, "w");
     int ret = PEM_write_bio_X509(out, cert);
+    BIO_free(out);
     return ret;
 }
 
 //Certificate Saving end
+
+void appendFile(std::string const& outFile, std::string const& inFile) 
+{
+    static size_t const BufferSize = 8192; // 8 KB
+    std::ofstream out(outFile, std::ios_base::app |
+                               std::ios_base::binary |
+                               std::ios_base::out);
+
+    std::ifstream in(inFile, std::ios_base::binary |
+                             std::ios_base::in);
+
+    std::vector<char> buffer(BufferSize);
+    while (in.read(&buffer[0], buffer.size())) {
+        out.write(&buffer[0], buffer.size());
+    }
+
+    // Fails when "read" encounters EOF,
+    // but potentially still writes *some* bytes to buffer!
+    out.write(&buffer[0], in.gcount());
+    out.close();
+    in.close();
+}
+
+/** CRYPTO ROUTINES (ENCRYPT, DECRYPT, SIGN, VERIFY) START HERE **/
+int sign(std::string cert_key, std::string file_to_sign, std::string signed_file)
+{
+    BIO *in = NULL, *out = NULL, *tbio = NULL;
+    X509 *scert = NULL;
+    EVP_PKEY *skey = NULL;
+    CMS_ContentInfo *cms = NULL;
+    int ret = 1;
+
+    /*
+     * For simple S/MIME signing use CMS_DETACHED. On OpenSSL 1.0.0 only: for
+     * streaming detached set CMS_DETACHED|CMS_STREAM for streaming
+     * non-detached set CMS_STREAM
+     */
+    int flags = CMS_DETACHED | CMS_STREAM;
+
+    OpenSSL_add_all_algorithms();
+    ERR_load_crypto_strings();
+
+    /* Read in signer certificate and private key */
+    tbio = BIO_new_file(cert_key.c_str(), "r");
+
+    if (!tbio)
+        goto err;
+
+    scert = PEM_read_bio_X509(tbio, NULL, 0, NULL);
+
+    BIO_reset(tbio);
+
+    skey = PEM_read_bio_PrivateKey(tbio, NULL, 0, NULL);
+
+    if (!scert || !skey)
+        goto err;
+
+    /* Open content being signed */
+    in = BIO_new_file(file_to_sign.c_str(), "r");
+
+    if (!in)
+        goto err;
+
+    /* Sign content */
+    cms = CMS_sign(scert, skey, NULL, in, 0);
+
+    if (!cms)
+        goto err;
+
+    out = BIO_new_file(signed_file.c_str(), "w");
+    if (!out)
+        goto err;
+
+    if (!(flags & CMS_STREAM))
+        BIO_reset(in);
+
+    /* Write out S/MIME message */
+    if (!SMIME_write_CMS(out, cms, in, 0))
+        goto err;
+
+    ret = 0;
+
+ err:
+
+    if (ret) {
+        fprintf(stderr, "Error Signing Data\n");
+        ERR_print_errors_fp(stderr);
+    }
+
+    CMS_ContentInfo_free(cms);
+    X509_free(scert);
+    EVP_PKEY_free(skey);
+    BIO_free(in);
+    BIO_free(out);
+    BIO_free(tbio);
+    return ret;
+}
+
+std::vector<BYTE> encrypt(std::string cert_key, std::string file_path)
+{
+    BIO *in = NULL;
+    BIO *out = NULL;
+    BIO *tbio = NULL;
+    X509 *rcert = NULL;
+    STACK_OF(X509) *recips = NULL;
+    CMS_ContentInfo *cms = NULL;
+    int ret = 1;
+
+    std::ifstream file;
+    const std::string TMP_ENCRYPT_FILE = "tmp_encr.txt";
+    std::vector<BYTE> buffer;
+    size_t length;
+
+    /*
+     * On OpenSSL 1.0.0 and later only:
+     * for streaming set CMS_STREAM
+     */
+    int flags = CMS_STREAM;
+
+    OpenSSL_add_all_algorithms();
+    ERR_load_crypto_strings();
+
+    /* Read in recipient certificate */
+    tbio = BIO_new_file(cert_key.c_str(), "r");
+
+    if (!tbio)
+        goto err;
+
+    rcert = PEM_read_bio_X509(tbio, NULL, 0, NULL);
+
+    if (!rcert)
+        goto err;
+
+    /* Create recipient STACK and add recipient cert to it */
+    recips = sk_X509_new_null();
+
+    if (!recips || !sk_X509_push(recips, rcert))
+        goto err;
+
+    /*
+     * sk_X509_pop_free will free up recipient STACK and its contents so set
+     * rcert to NULL so it isn't freed up twice.
+     */
+    rcert = NULL;
+
+    /* Open content being encrypted */
+    in = BIO_new_file(file_path.c_str(), "r");
+    
+    if (!in)
+        goto err;
+
+    /* encrypt content */
+    cms = CMS_encrypt(recips, in, EVP_des_ede3_cbc(), flags);
+
+    if (!cms)
+        goto err;
+
+    out = BIO_new_file(TMP_ENCRYPT_FILE.c_str(), "w");
+    if (!out)
+        goto err;
+
+    /* Write out S/MIME message */
+    if (!SMIME_write_CMS(out, cms, in, flags))
+        goto err;
+
+    /** Read file to vector<BYTES> and return **/
+    file.open(TMP_ENCRYPT_FILE.c_str(), std::ios_base::binary);
+    file.seekg(0, file.end);
+    length = file.tellg();
+    file.seekg(0, file.beg);
+
+    //read file
+    if (length > 0) {
+        buffer.resize(length);    
+        file.read((char *)&buffer[0], length);
+    }
+    file.close();
+
+    /** Delete tmp_encr (tmp file) **/
+    if( remove(TMP_ENCRYPT_FILE.c_str()) != 0 )
+        goto err;
+
+    ret = 0;
+
+ err:
+
+    if (ret) {
+        fprintf(stderr, "Error Encrypting Data\n");
+        ERR_print_errors_fp(stderr);
+    }
+
+    CMS_ContentInfo_free(cms);
+    X509_free(rcert);
+    sk_X509_pop_free(recips, X509_free);
+    BIO_free(in);
+    BIO_free(out);
+    BIO_free(tbio);
+    return buffer;
+}
+
+int decrypt(std::string cert_key, std::string file_path, std::string decrypted_file_path)
+{
+    BIO *in = NULL, *out = NULL, *tbio = NULL;
+    X509 *rcert = NULL;
+    EVP_PKEY *rkey = NULL;
+    CMS_ContentInfo *cms = NULL;
+    int ret = 1;
+
+    OpenSSL_add_all_algorithms();
+    ERR_load_crypto_strings();
+
+    /* Read in recipient certificate and private key */
+    tbio = BIO_new_file(cert_key.c_str(), "r");
+
+    if (!tbio)
+        goto err;
+
+    rcert = PEM_read_bio_X509(tbio, NULL, 0, NULL);
+
+    BIO_reset(tbio);
+
+    rkey = PEM_read_bio_PrivateKey(tbio, NULL, 0, NULL);
+
+    if (!rcert || !rkey)
+        goto err;
+
+    /* Open S/MIME message to decrypt */
+    in = BIO_new_file(file_path.c_str(), "r");
+
+    if (!in)
+        goto err;
+
+    /* Parse message */
+    cms = SMIME_read_CMS(in, NULL);
+
+    if (!cms)
+        goto err;
+
+    out = BIO_new_file(decrypted_file_path.c_str(), "w");
+    if (!out)
+        goto err;
+
+    /* Decrypt S/MIME message */
+    if (!CMS_decrypt(cms, rkey, rcert, NULL, out, 0))
+        goto err;
+
+    ret = 0;
+
+ err:
+
+    if (ret) {
+        fprintf(stderr, "Error Decrypting Data\n");
+        ERR_print_errors_fp(stderr);
+    }
+
+    CMS_ContentInfo_free(cms);
+    X509_free(rcert);
+    EVP_PKEY_free(rkey);
+    BIO_free(in);
+    BIO_free(out);
+    BIO_free(tbio);
+    return ret;
+}
+
+int verify(std::string cert_key, std::string file_to_verify, std::string verified_file)
+{
+    BIO *in = NULL, *out = NULL, *tbio = NULL, *cont = NULL;
+    X509_STORE *st = NULL;
+    X509 *cacert = NULL;
+    CMS_ContentInfo *cms = NULL;
+
+    STACK_OF(X509) *stack = NULL;
+    X509 *signcert = NULL;
+    BIO *tbio2 = NULL;
+
+    int ret = 1;
+
+    OpenSSL_add_all_algorithms();
+    ERR_load_crypto_strings();
+
+    /* Set up trusted CA certificate store */
+    st = X509_STORE_new();
+
+    /* Read in CA certificate */
+    tbio = BIO_new_file(CA_CERT_PATH.c_str(), "r");
+
+    if (!tbio)
+        goto err;
+
+    if (!tbio)
+        goto err;
+
+    cacert = PEM_read_bio_X509(tbio, NULL, 0, NULL);
+
+    if (!cacert)
+        goto err;
+
+    if (!X509_STORE_add_cert(st, cacert))
+        goto err;
+
+    /* Read in signing certificate */
+    tbio2 = BIO_new_file(cert_key.c_str(), "r");
+
+    if (!tbio2)
+        goto err;
+
+    signcert = PEM_read_bio_X509(tbio2, NULL, 0, NULL);
+
+    if (!signcert)
+        goto err;
+
+    if(!sk_X509_push(stack, signcert))
+        goto err;
+
+    /* Open message being verified */
+    in = BIO_new_file(file_to_verify.c_str(), "r");
+
+    if (!in)
+        goto err;
+
+    /* parse message */
+    cms = SMIME_read_CMS(in, &cont);
+
+    if (!cms)
+        goto err;
+
+    /* File to output verified content to */
+    out = BIO_new_file(verified_file.c_str(), "w");
+    if (!out)
+        goto err;
+
+    if (!CMS_verify(cms, stack, st, cont, out, 0)) {
+        fprintf(stderr, "Verification Failure\n");
+        goto err;
+    }
+
+    fprintf(stderr, "Verification Successful\n");
+
+    ret = 0;
+
+ err:
+
+    if (ret) {
+        fprintf(stderr, "Error Verifying Data\n");
+        ERR_print_errors_fp(stderr);
+    }
+
+    CMS_ContentInfo_free(cms);
+    X509_free(cacert);
+    X509_free(signcert);
+    BIO_free(in);
+    BIO_free(out);
+    BIO_free(tbio);
+    BIO_free(tbio2);
+    return ret;
+}

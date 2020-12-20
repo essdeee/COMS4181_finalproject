@@ -2,6 +2,7 @@
 #define SERVER_UTILS_H
 #include <string>
 #include <vector>
+#include <openssl/x509v3.h>
 
 /**************************** CONSTANTS ******************************/
 #define MAILBOX_NAME_MAX 255
@@ -55,7 +56,7 @@ std::string hash_password(std::string password, std::string salt);
 std::vector<std::string> split(std::string str,std::string sep);
 HTTPrequest parse_request(const std::string request);
 std::string convert_to_lower(const std::string str);
-HTTPresponse route(const std::string request, const std::string username);
+HTTPresponse route(const std::string request, const std::string username, const std::string encoded_client_cert);
 bool validMailboxChars(const std::string &str);
 bool validPasswordChars(const std::string &str);
 bool doesMailboxExist(const std::string &s);
@@ -68,4 +69,5 @@ void write_file(std::string str, std::string filename);
 HTTPresponse server_error_response(const std::string failure_program, 
                                     const std::string error_message, 
                                     const std::string status_code);
+void crt_to_pem(X509 *crt, uint8_t **crt_bytes, size_t *crt_size);
 #endif

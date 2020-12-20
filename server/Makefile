@@ -1,8 +1,8 @@
 all: request-handler cert-gen fetch-cert verify-pass update-pass mail-out mail-in
 .PHONY: all
 
-request-handler: request-handler.o route_utils.o server_utils.o
-	g++ request-handler.o route_utils.o server_utils.o -o request-handler -lssl -lcrypto -lcrypt -std=c++17
+request-handler: request-handler.o route_utils.o server_utils.o base64.o
+	g++ request-handler.o route_utils.o server_utils.o base64.o -o request-handler -lssl -lcrypto -lcrypt -std=c++17
 
 request-handler.o: request-handler.cpp
 	g++ request-handler.cpp -c -lssl -lcrypto -std=c++17
