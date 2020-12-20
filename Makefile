@@ -1,6 +1,13 @@
 all: request-handler cert-gen fetch-cert verify-pass update-pass mail-out mail-in getcert changepw sendmsg recvmsg
 .PHONY: all
 
+SHELL := /bin/bash
+
+install: request-handler cert-gen fetch-cert verify-pass update-pass mail-out mail-in getcert changepw sendmsg recvmsg
+	all
+	scripts/install-system.sh
+.PHONY: install
+
 request-handler: request-handler.o route_utils.o server_utils.o base64.o
         g++ request-handler.o route_utils.o server_utils.o base64.o -o request-handler -lssl -lcrypto -lcrypt -std=c++>
 
