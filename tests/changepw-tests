@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 function pause(){
 read -p "$*"
@@ -8,7 +8,7 @@ cd system/client
 
 echo 'changepw- valid test:'
 echo 'running bin/changepw addleness -op Cardin_pwns -np Cardin_pwns2'
-bin/getcert addleness -op Cardin_pwns -np Cardin_pwns2
+bin/changepw addleness -op Cardin_pwns -np Cardin_pwns2
 pause 'Press [Enter] key to continue...'
 echo ''
 
@@ -18,7 +18,7 @@ echo 'Test message' >> outbound/00001
 echo 'running bin/sendmsg addleness outbound/00001 addleness -p Cardin_pwns2'
 bin/sendmsg addleness outbound/00001 addleness
 echo 'running bin/changepw addleness -op Cardin_pwns2 -np Cardin_pwns3'
-bin/getcert addleness -op Cardin_pwns2 -np Cardin_pwns3
+bin/changepw addleness -op Cardin_pwns2 -np Cardin_pwns3
 pause 'Press [Enter] key to continue...'
 echo ''
 
