@@ -45,6 +45,7 @@ int sign(std::string cert_key, std::string file_to_sign, std::string signed_file
 std::vector<BYTE> encrypt(std::string cert_key, std::string file_path);
 int decrypt(std::string cert_key, std::string file_path, std::string decrypted_file_path);
 int verify(std::string cert_key, std::string file_to_verify, std::string verified_file);
+std::string random_string(std::string::size_type length);
 
 std::string base64_encode(BYTE const* buf, unsigned long bufLen);
 std::vector<BYTE> base64_decode(std::string const&);

@@ -22,6 +22,9 @@ cp $HOME/../../lib/x86_64-linux-gnu/libm.so.6 system/server/handler/mail/lib/x86
 cp $HOME/../../lib64/ld-linux-x86-64.so.2 system/server/handler/mail/lib64/ld-linux-x86-64.so.2
 cp $HOME/../../lib/x86_64-linux-gnu/libgcc_s.so.1 system/server/handler/mail/lib/x86_64-linux-gnu/libgcc_s.so.1
 cp $HOME/../../lib/x86_64-linux-gnu/libcrypt.so.1 system/server/handler/mail/lib/x86_64-linux-gnu/libcrypt.so.1
+cp $HOME/../../lib/x86_64-linux-gnu/libcrypto.so.1.1 system/server/handler/mail/lib/x86_64-linux-gnu/libcrypto.so.1.1
+cp $HOME/../../lib/x86_64-linux-gnu/libdl.so.2 system/server/handler/mail/lib/x86_64-linux-gnu/libdl.so.2
+cp $HOME/../../lib/x86_64-linux-gnu/libpthread.so.0 system/server/handler/mail/lib/x86_64-linux-gnu/libpthread.so.0
 
 #create users
 if ! id mail-in-usr &>/dev/null; then
