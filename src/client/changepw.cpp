@@ -98,14 +98,14 @@ int main(int argc, char* argv[])
         if(argv2 == "-op" && argv4 == "-np")
         {
             username = argv1;
-            new_password = argv3;
-            old_password = argv5;
+            old_password = argv3;
+            new_password = argv5;
         }
         else if(argv2 == "-np" && argv4 == "-op") 
         {
             username = argv1;
-            old_password = argv3;
-            new_password = argv5;
+            new_password = argv3;
+            old_password = argv5;
         }
         else
         {
@@ -120,12 +120,12 @@ int main(int argc, char* argv[])
         std::cerr << "Username invalid (too long or invalid characters). Aborting.\n";
         return 1;
     }
-    if(!validPasswordChars(old_password))
+    if(old_password.length() > PASSWORD_MAX && !validPasswordChars(old_password))
     {
         std::cerr << "Old password invalid (invalid characters). Aborting.\n";
         return 1;
     }
-    if(!validPasswordChars(new_password))
+    if(new_password.length() > PASSWORD_MAX && !validPasswordChars(new_password))
     {
         std::cerr << "New password invalid (invalid characters). Aborting.\n";
         return 1;
