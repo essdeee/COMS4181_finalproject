@@ -62,23 +62,56 @@ std::string changepw_response(std::string server_response)
 
 int main(int argc, char* argv[])
 {
-    if(argc != 2)
+    if(argc != 2 && argc != 6)
     {
         std::cerr << "Incorrect number of args. Please enter a username.\n";
         return 1;
     }
 
-    // Take username and pass
-    std::string username = argv[1];
-    std::string old_password = getpass("Enter old password: ");
-    std::string new_password = getpass("Enter new password: ");
-    std::string new_password_confirm = getpass("Enter new password again to confirm: ");
+    std::string username;
+    std::string old_password;
+    std::string new_password;
 
-    // Make sure they typed it in right twice
-    if(new_password != new_password_confirm)
+    // Take username and pass
+    if(argc == 2)
     {
-        std::cerr << "New password not typed in same twice. Please try again.\n";
-        return 1;
+        username = argv[1];
+        old_password = getpass("Enter old password: ");
+        new_password = getpass("Enter new password: ");
+        std::string new_password_confirm = getpass("Enter new password again to confirm: ");
+
+        // Make sure they typed it in right twice
+        if(new_password != new_password_confirm)
+        {
+            std::cerr << "New password not typed in same twice. Please try again.\n";
+            return 1;
+        }
+    }
+    else //argc == 6
+    {
+        std::string argv1 = argv[1];
+        std::string argv2 = argv[2];
+        std::string argv3 = argv[3];
+        std::string argv4 = argv[4];
+        std::string argv5 = argv[5];
+
+        if(argv2 == "-op" && argv4 == "-np")
+        {
+            username = argv1;
+            new_password = argv3;
+            old_password = argv5;
+        }
+        else if(argv2 == "-np" && argv4 == "-op") 
+        {
+            username = argv1;
+            old_password = argv3;
+            new_password = argv5;
+        }
+        else
+        {
+            std::cerr << "Error in arguments. Usage: ./changepw <username> -op [pass] -np [pass]\n";
+            return 1;
+        }
     }
 
     // Validate username and password lengths

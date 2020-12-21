@@ -61,15 +61,42 @@ std::string getcert_response(std::string server_response)
 
 int main(int argc, char* argv[])
 {
-    if(argc != 2)
+    if(argc != 2 && argc != 4)
     {
         std::cerr << "Incorrect number of args. Please enter a username.\n";
         return 1;
     }
 
-    // Take username and pass
-    std::string username = argv[1];
-    std::string password = getpass("Enter password: ");
+    // Parse options
+    std::string password;
+    std::string username;
+    if(argc == 4)
+    {
+        std::string argv1 = argv[1];
+        std::string argv2 = argv[2];
+        std::string argv3 = argv[3];
+        if(argv1 == "-p")
+        {
+            password = argv2;
+            username = argv3;
+        }
+        else if(argv2 == "-p")
+        {
+            username = argv1;
+            password = argv3;
+        }
+        else
+        {
+            std::cerr << "-p option used incorrectly.\n";
+            return 1;
+        }
+    }
+    else // argc == 2
+    {
+        // Take username and pass
+        username = argv[1];
+        password = getpass("Enter password: ");
+    }
 
     // Validate username and password lengths
     if(username.length() > USERNAME_MAX && !validMailboxChars(username))
