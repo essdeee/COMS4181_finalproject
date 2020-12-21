@@ -13,7 +13,9 @@
 
 /**************************** CONSTANTS ******************************/
 const std::string SAVE_CERT_PATH = "keypair/client.pem";
-const std::string PRIVATE_KEY_PATH = "keypair/client.key.pem";
+// const std::string PRIVATE_KEY_PATH = "keypair/client.key.pem"; Deprecated after switch to multiuser system
+const std::string PRIVATE_KEY_SUFFIX = ".key.pem";
+const std::string PRIVATE_KEY_PREFIX = "keypair/";
 const std::string NEW_KEY_PATH = "keypair/new.key.pem";
 const std::string CA_CERT_PATH = "keypair/cacert.pem"; // Trusted CA Cert for authenticating the server
 const std::string CAT_CERT_KEY_PATH = "keypair/client_cert_key.pem";

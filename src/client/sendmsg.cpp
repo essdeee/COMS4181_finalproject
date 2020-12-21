@@ -111,16 +111,24 @@ std::string sendmsg_message_response(std::string server_response)
 
 int main(int argc, char* argv[])
 {
-    if(argc < 3)
+    if(argc < 4)
     {
-        std::cerr << "Incorrect number of args. Expected usage: ./sendmsg <message path> <recipient 1> <recipient 2> ... <recipient n>.\n";
+        std::cerr << "Incorrect number of args. Expected usage: ./sendmsg <username> <message path> <recipient 1> <recipient 2> ... <recipient n>.\n";
         return 1;
     }
 
     // Parse out the file name and recipients from the command
     std::vector<std::string> recipients;
-    std::string msg_name = argv[1];
-    for (int i = 2; i < argc; i++)
+    std::string username = argv[1];
+    std::string msg_name = argv[2];
+    if(username.length() > USERNAME_MAX || !validMailboxChars(username))
+    {
+        std::cerr << "Provided invalid username as sender. Aborting...\n";
+        return 1;
+    }
+
+    // Parse out recipients
+    for (int i = 3; i < argc; i++)
     {
         std::string recipient = argv[i];
 
@@ -147,7 +155,8 @@ int main(int argc, char* argv[])
     HTTPrequest request = sendmsg_encrypt_request(recipients);
 
     // Send client request and receive response
-    std::string encrypt_response = send_request(request, true); // Should be client-auth
+    std::string private_key_path = PRIVATE_KEY_PREFIX + username + PRIVATE_KEY_SUFFIX;
+    std::string encrypt_response = send_request(request, private_key_path, true); // Should be client-auth
     
     // Write encryption certs (from server response) to file
     std::vector<std::string> encrypt_certs = sendmsg_encrypt_response(encrypt_response);
@@ -208,7 +217,7 @@ int main(int argc, char* argv[])
     request = sendmsg_message_request(signed_encrypted_encoded_messages, recipients);
 
     // Send client request and receive response
-    std::string message_response = send_request(request, true);
+    std::string message_response = send_request(request, private_key_path, true);
 
     // Parse the server response 
     std::string parsed_response = sendmsg_message_response(message_response);

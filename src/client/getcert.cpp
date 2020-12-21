@@ -118,7 +118,8 @@ int main(int argc, char* argv[])
     HTTPrequest request = getcert_request(username, password, csr);
 
     // Send client request and receive response. Client authentication FALSE.
-    std::string response = send_request(request, false);
+    std::string empty_string;
+    std::string response = send_request(request, empty_string, false);
     
     // Parse out the cert from the server response
     std::vector<std::string> response_parsed = getcert_response(response);
@@ -136,9 +137,10 @@ int main(int argc, char* argv[])
     std::string certstr = response_parsed[1];
 
     // Swap out the key if new; keep old key if old
+    std::string private_key_path = PRIVATE_KEY_PREFIX + username + PRIVATE_KEY_SUFFIX;
     if(new_or_old == "new")
     {
-        int ret = replace_file(PRIVATE_KEY_PATH, NEW_KEY_PATH);
+        int ret = replace_file(private_key_path, NEW_KEY_PATH);
         remove(NEW_KEY_PATH.c_str());
     }
     else if(new_or_old == "old")
@@ -161,11 +163,13 @@ int main(int argc, char* argv[])
     else
     {
         std::cout << "Certificate successfully saved as " + SAVE_CERT_PATH + "\n";
+        std::cout << "Private key in " + private_key_path + "\n";
     }
 
     remove(CAT_CERT_KEY_PATH.c_str());
     appendFile(CAT_CERT_KEY_PATH, SAVE_CERT_PATH);
-    appendFile(CAT_CERT_KEY_PATH, PRIVATE_KEY_PATH);
+    appendFile(CAT_CERT_KEY_PATH, private_key_path);
     std::cout << "Appending certificate to key to make " + CAT_CERT_KEY_PATH << std::endl;
+    std::cout << "LOGGED IN AS: " << username << "." << std::endl;
     return 0;
 }

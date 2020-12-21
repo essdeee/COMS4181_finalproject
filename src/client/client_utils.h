@@ -9,7 +9,9 @@
 #define USERNAME_MAX 255
 #define PASSWORD_MAX 255
 extern const std::string SAVE_CERT_PATH;
-extern const std::string PRIVATE_KEY_PATH;
+// extern const std::string PRIVATE_KEY_PATH;
+extern const std::string PRIVATE_KEY_PREFIX;
+extern const std::string PRIVATE_KEY_SUFFIX;
 extern const std::string NEW_KEY_PATH;
 extern const std::string CA_CERT_PATH;
 extern const std::string CAT_CERT_KEY_PATH;

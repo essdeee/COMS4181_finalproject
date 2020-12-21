@@ -65,11 +65,24 @@ std::vector<std::string> recvmsg_response(std::string server_response)
 
 int main(int argc, char* argv[])
 {
+    if(argc != 2)
+    {
+        std::cerr << "Incorrect number of args. Expected usage: ./recvmsg <username>.\n";
+        return 1;
+    }
+
     // Request is a simple GET request using the cert that should already be on client side
     HTTPrequest request = recvmsg_request();
 
     // Send client request and receive response
-    std::string response = send_request(request, true); // Must be client-auth
+    std::string username = argv[1];
+    if(username.length() > USERNAME_MAX || !validMailboxChars(username))
+    {
+        std::cerr << "Provided invalid username as sender. Aborting...\n";
+        return 1;
+    }
+    std::string private_key_path = PRIVATE_KEY_PREFIX + username + PRIVATE_KEY_SUFFIX;
+    std::string response = send_request(request, private_key_path, true); // Must be client-auth
     
     // Get back (1) certificate from the sender (to verify signature) (2) the encrypted message
     std::vector<std::string> cert_msg = recvmsg_response(response);
@@ -136,22 +149,8 @@ int main(int argc, char* argv[])
         std::cout << "Could not open to display to stdout.\n";
     }
 
-    // Cleanup tmp files
-    if(remove(TMP_DECODED_MSG.c_str()))
-    {
-        std::cerr << "Could not delete tmp file: " + TMP_DECODED_MSG << std::endl;
-        return 1;
-    }
-    if(remove(TMP_DECODED_CERT.c_str()))
-    {
-        std::cerr << "Could not delete tmp file: " + TMP_DECODED_CERT << std::endl;
-        return 1;
-    }
-    if(remove(TMP_DECRYPTED_MSG.c_str()))
-    {
-        std::cerr << "Could not delete tmp file: " + TMP_DECRYPTED_MSG << std::endl;
-        return 1;
-    }
-
+    remove(TMP_DECODED_MSG.c_str());
+    remove(TMP_DECODED_CERT.c_str());
+    remove(TMP_DECRYPTED_MSG.c_str());
     return 0;
 }
