@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
     // Generate HTTP request
     HTTPrequest request = changepw_request(username, old_password, new_password, csr);
 
-    // Send cleint request and receive response. Client authentication FALSE.
+    // Send client request and receive response. Client authentication FALSE.
     std::string response = send_request(request, false);    
 
     // Write cert (from server response) to file    
@@ -159,15 +159,12 @@ int main(int argc, char* argv[])
     }
     else
     {
+        int ret = replace_file(PRIVATE_KEY_PATH, NEW_KEY_PATH);
+        remove(NEW_KEY_PATH.c_str());
         std::cout << "Password changed. New certificate successfully saved as " + SAVE_CERT_PATH + "\n";
     }
-
-    // Append the key to the cert for crypto methods
-    if(remove(CAT_CERT_KEY_PATH.c_str()))
-    {
-        std::cerr << "Could not remove existing catted cert_key in " + CAT_CERT_KEY_PATH << std::endl;
-    }
     
+    remove(CAT_CERT_KEY_PATH.c_str());
     appendFile(CAT_CERT_KEY_PATH, SAVE_CERT_PATH);
     appendFile(CAT_CERT_KEY_PATH, PRIVATE_KEY_PATH);
     std::cout << "Appending certificate to key to make " + CAT_CERT_KEY_PATH << std::endl;

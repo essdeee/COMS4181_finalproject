@@ -60,30 +60,6 @@ std::vector<std::string> getcert_response(std::string server_response)
     return response_parsed;
 }
 
-int replace_file(std::string out, std::string in)
-{
-    std::ifstream infile(in, std::ios_base::in | std::ios_base::binary);
-    std::ofstream outfile(out, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-
-    if(infile.good() && outfile.good())
-    {
-        char buf[1024];
-        do {
-            infile.read(&buf[0], 1024);
-            outfile.write(&buf[0], infile.gcount());
-        } while (infile.gcount() > 0);
-
-        infile.close();
-        outfile.close();
-        return 0;
-    }
-    else
-    {
-        std::cerr << "Could not replace file " + out + " with " + in + ".\n";
-        return 1;
-    }
-}
-
 int main(int argc, char* argv[])
 {
     if(argc != 2 && argc != 4)
@@ -143,7 +119,6 @@ int main(int argc, char* argv[])
 
     // Send client request and receive response. Client authentication FALSE.
     std::string response = send_request(request, false);
-    std::cout << response;
     
     // Parse out the cert from the server response
     std::vector<std::string> response_parsed = getcert_response(response);
@@ -188,12 +163,7 @@ int main(int argc, char* argv[])
         std::cout << "Certificate successfully saved as " + SAVE_CERT_PATH + "\n";
     }
 
-    // Append the key to the cert for crypto methods
-    if(remove(CAT_CERT_KEY_PATH.c_str()))
-    {
-        std::cerr << "Could not remove existing catted cert_key in " + CAT_CERT_KEY_PATH << std::endl;
-    }
-
+    remove(CAT_CERT_KEY_PATH.c_str());
     appendFile(CAT_CERT_KEY_PATH, SAVE_CERT_PATH);
     appendFile(CAT_CERT_KEY_PATH, PRIVATE_KEY_PATH);
     std::cout << "Appending certificate to key to make " + CAT_CERT_KEY_PATH << std::endl;

@@ -731,3 +731,27 @@ std::vector<BYTE> base64_decode(std::string const& encoded_string) {
 
   return ret;
 }
+
+int replace_file(std::string out, std::string in)
+{
+    std::ifstream infile(in, std::ios_base::in | std::ios_base::binary);
+    std::ofstream outfile(out, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+
+    if(infile.good() && outfile.good())
+    {
+        char buf[1024];
+        do {
+            infile.read(&buf[0], 1024);
+            outfile.write(&buf[0], infile.gcount());
+        } while (infile.gcount() > 0);
+
+        infile.close();
+        outfile.close();
+        return 0;
+    }
+    else
+    {
+        std::cerr << "Could not replace file " + out + " with " + in + ".\n";
+        return 1;
+    }
+}

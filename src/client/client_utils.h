@@ -46,5 +46,6 @@ int verify(std::string cert_key, std::string file_to_verify, std::string verifie
 
 std::string base64_encode(BYTE const* buf, unsigned long bufLen);
 std::vector<BYTE> base64_decode(std::string const&);
+int replace_file(std::string out, std::string in);
 
 #endif
