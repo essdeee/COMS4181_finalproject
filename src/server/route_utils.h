@@ -19,6 +19,8 @@ extern const std::string RECVMSG_ROUTE;
 
 extern const std::string FETCH_ENCRYPT_CERT;
 extern const std::string FETCH_SIGN_CERT;
+extern const std::string GETCERT_NEW_CERT;
+extern const std::string GETCERT_OLD_CERT;
 
 /**************************** FUNCTION DECLARATIONS *****************/
 HTTPresponse getcert_route(int content_length, std::string request_body);

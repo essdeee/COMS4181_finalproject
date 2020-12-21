@@ -24,6 +24,8 @@ const std::string RECVMSG_ROUTE = "/recvmsg";
 
 const std::string FETCH_ENCRYPT_CERT = "encrypt";
 const std::string FETCH_SIGN_CERT = "sign";
+const std::string GETCERT_NEW_CERT = "new";
+const std::string GETCERT_OLD_CERT = "old";
 
 int call_server_program(std::string program_name, std::vector<std::string> args)
 {
@@ -172,27 +174,52 @@ HTTPresponse getcert_route(int content_length, std::string request_body)
         return server_error_response("getcert_route", "Password in request body invalid format.", "400");
     }
 
+    std::string cert;       // Write to this string the base64encoded certificate
+    std::string new_or_old; // Flag for client to know if this is a new cert or an old one
     std::vector<std::string> verify_pass_args {username, password};
     if (call_server_program("verify-pass", verify_pass_args) == 0)
     {
-        std::cout << "Client username and password is valid. Now generating certificate...\n";
-        std::vector<std::string> cert_gen_args {csr_string, username};
-        if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
+        std::cout << "Client username and password is valid. Checking for certificate...\n";
+
+        std::vector<std::string> fetch_cert_args {username};
+
+        // Certificate already exists on server. Send existing one back.
+        if(call_server_program("fetch-cert", fetch_cert_args) == 0)
         {
-            // Read newly created certificate from tmp file
-            std::string cert; // Placeholder for now
+            // Extract the client cert on the server
+            std::cout << "Certificate already exists for " + username + ". Sending back existing cert...\n";
+            new_or_old = GETCERT_OLD_CERT;
             std::ifstream infile(TMP_CERT_FILE);
             infile >> cert;
-            response.body = cert;
+            infile.close();
 
+            // Delete tmp file after getting the encoded cert from fetch-cert
             if( remove( TMP_CERT_FILE.c_str() ) != 0 )
             {
-                return server_error_response("cert-gen", "Error deleting tmp file on server end.", "500");
+                return server_error_response("fetch-cert", "Error deleting tmp file while getting client cert.", "500");
             }
         }
+        // Certificate does not yet exist on server. Sign the CSR and create a new cert for user.
         else
         {
-            return server_error_response("cert-gen", "Certificate generation failed on server end.", "500");
+            std::cout << "Certificate does not yet exist for " + username + ". Generating new cert from CSR...\n";
+            new_or_old = GETCERT_NEW_CERT;
+            std::vector<std::string> cert_gen_args {csr_string, username};
+            if(call_server_program("cert-gen", cert_gen_args) == 0) // Success
+            {
+                // Read newly created certificate from tmp file
+                std::ifstream infile(TMP_CERT_FILE);
+                infile >> cert;
+
+                if( remove( TMP_CERT_FILE.c_str() ) != 0 )
+                {
+                    return server_error_response("cert-gen", "Error deleting tmp file on server end.", "500");
+                }
+            }
+            else
+            {
+                return server_error_response("cert-gen", "Certificate generation failed on server end.", "500");
+            }
         }
     }
     else
@@ -200,6 +227,8 @@ HTTPresponse getcert_route(int content_length, std::string request_body)
         return server_error_response("cert-gen", "Client specified invalid username/password combination.", "400");
     }
 
+    response.body += new_or_old + "\n";
+    response.body += cert;
     response.command_line = HTTP_VERSION + " 200 OK";
     response.status_code = "200";
     response.content_length = response.body.size();

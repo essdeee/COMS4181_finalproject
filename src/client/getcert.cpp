@@ -23,11 +23,11 @@ HTTPrequest getcert_request(std::string username, std::string password, std::vec
     return request;
 }
 
-std::string getcert_response(std::string server_response)
+std::vector<std::string> getcert_response(std::string server_response)
 {
     // Parse and get error code if there is one
     HTTPresponse response = parse_http_response(server_response);
-    std::string response_string;
+    std::vector<std::string> response_parsed;
 
     // Check if content length matches 
     /*
@@ -42,21 +42,46 @@ std::string getcert_response(std::string server_response)
     {
         // Check if cert is the only thing in the body
         std::vector<std::string> split_body = split(response.body, "\n");
-        if(split_body.size() != 1)
+        if(split_body.size() != 2)
         {
-            response_string = "!Response body improperly formatted. Should only be one newline delimited certificate.\n";
+            response_parsed.push_back("!Response body improperly formatted. Should only be a NEW/OLD flag and a newline delimited encoded certificate.\n");
         }
         else
         {
-            response_string = split_body[0]; // This is the encoded certificate
+            response_parsed.push_back(split_body[0]);
+            response_parsed.push_back(split_body[1]); // This is the encoded certificate
         }
     }
     else
     {
-        response_string = "!" + response.error_msg;
+        response_parsed.push_back("!" + response.error_msg);
     }
 
-    return response_string;
+    return response_parsed;
+}
+
+int replace_file(std::string out, std::string in)
+{
+    std::ifstream infile(in, std::ios_base::in | std::ios_base::binary);
+    std::ofstream outfile(out, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+
+    if(infile.good() && outfile.good())
+    {
+        char buf[1024];
+        do {
+            infile.read(&buf[0], 1024);
+            outfile.write(&buf[0], infile.gcount());
+        } while (infile.gcount() > 0);
+
+        infile.close();
+        outfile.close();
+        return 0;
+    }
+    else
+    {
+        std::cerr << "Could not replace file " + out + " with " + in + ".\n";
+        return 1;
+    }
 }
 
 int main(int argc, char* argv[])
@@ -118,19 +143,41 @@ int main(int argc, char* argv[])
 
     // Send client request and receive response. Client authentication FALSE.
     std::string response = send_request(request, false);
+    std::cout << response;
     
     // Parse out the cert from the server response
-    std::string certstr = getcert_response(response);
+    std::vector<std::string> response_parsed = getcert_response(response);
     
     // Check if error in response
-    if( certstr[0] == '!' ) // ! is not in base64 encoding
+    if( response_parsed.size() == 1 && response_parsed[0][0] == '!' ) // ! is not in base64 encoding
     {
-        std::cerr << certstr.substr(1) << std::endl;
+        std::cerr << response_parsed[0].substr(1) << std::endl;
         std::cerr << "Did not successfully save certificate.\n";
         return 1;
     }
 
+    // Parse out the flag and the certstr (base64 encoded)
+    std::string new_or_old = response_parsed[0];
+    std::string certstr = response_parsed[1];
+
+    // Swap out the key if new; keep old key if old
+    if(new_or_old == "new")
+    {
+        int ret = replace_file(PRIVATE_KEY_PATH, NEW_KEY_PATH);
+        remove(NEW_KEY_PATH.c_str());
+    }
+    else if(new_or_old == "old")
+    {
+        remove(NEW_KEY_PATH.c_str());
+    }
+    else
+    {
+        std::cerr << "Server sent invalid NEW/OLD flag in response: " + new_or_old + ". Did not save certificate.\n";
+        return 1;
+    }
+
     // PEM write methods have 0 for failure and 1 for success
+    std::cout << "Received " + new_or_old + " certificate.\n";
     if(save_cert(certstr, SAVE_CERT_PATH) == 0)
     {
         std::cerr << "Could not successfully save certificate.\n";
@@ -150,6 +197,5 @@ int main(int argc, char* argv[])
     appendFile(CAT_CERT_KEY_PATH, SAVE_CERT_PATH);
     appendFile(CAT_CERT_KEY_PATH, PRIVATE_KEY_PATH);
     std::cout << "Appending certificate to key to make " + CAT_CERT_KEY_PATH << std::endl;
-    
     return 0;
 }

@@ -14,6 +14,7 @@
 /**************************** CONSTANTS ******************************/
 const std::string SAVE_CERT_PATH = "keypair/client.pem";
 const std::string PRIVATE_KEY_PATH = "keypair/client.key.pem";
+const std::string NEW_KEY_PATH = "keypair/new.key.pem";
 const std::string CA_CERT_PATH = "keypair/cacert.pem"; // Trusted CA Cert for authenticating the server
 const std::string CAT_CERT_KEY_PATH = "keypair/client_cert_key.pem";
 
@@ -186,7 +187,7 @@ std::vector<BYTE> gen_csr(std::string client_name)
     if(ret != 1){
         goto free_all;
     }
-    private_key_to_pem(r, PRIVATE_KEY_PATH.c_str());
+    private_key_to_pem(r, NEW_KEY_PATH.c_str());
 
     // 2. set version of x509 req
     x509_req = X509_REQ_new();
