@@ -7,6 +7,7 @@ SHELL := /bin/bash
 install: request-handler cert-gen fetch-cert verify-pass update-pass mail-out mail-in getcert changepw sendmsg recvmsg
 	make all
 	sudo scripts/install-system.sh
+	make clean
 
 request-handler: request-handler.o route_utils.o server_utils.o
 	g++ request-handler.o route_utils.o server_utils.o -o request-handler -lssl -lcrypto -lcrypt -std=c++17
@@ -95,6 +96,5 @@ clean:
 
 .PHONY: uninstall
 uninstall:
-	make clean
 	sudo rm -rf certs
 	sudo rm -rf system
