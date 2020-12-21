@@ -11,10 +11,13 @@ const std::string GETCERT_ROUTE = "/getcert";
 const std::string CHANGEPW_ROUTE = "/changepw";
 const std::string SENDMSG_ENCRYPT_ROUTE = "/sendmsg_encrypt";
 const std::string SENDMSG_MESSAGE_ROUTE = "/sendmsg_message";
+const std::string VERIFY_ERROR_ROUTE = "err";
 const std::string RECVMSG_ROUTE = "/recvmsg";
 const std::string HTTPS_PREFIX = "https://";
 const std::string HOSTNAME = "localhost";
+const std::string VERIFY_ERROR_HOSTNAME = "err";
 const std::string DEFAULT_PORT = "8080";
+const std::string VERIFY_ERROR_PORT = "9999";
 
 /**************************** FUNCTIONS ******************************/
 std::vector<std::string> parse_command_line(std::string command_line)

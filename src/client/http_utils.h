@@ -8,6 +8,9 @@ extern const std::string CHANGEPW_ROUTE;
 extern const std::string SENDMSG_ENCRYPT_ROUTE;
 extern const std::string SENDMSG_MESSAGE_ROUTE;
 extern const std::string RECVMSG_ROUTE;
+extern const std::string VERIFY_ERROR_ROUTE;
+extern const std::string VERIFY_ERROR_HOSTNAME;
+extern const std::string VERIFY_ERROR_PORT;
 
 extern const std::string HTTPS_PREFIX;
 extern const std::string HOSTNAME;

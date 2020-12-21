@@ -155,18 +155,25 @@ SSL *get_ssl(BIO *bio)
     return ssl;
 }
 
-void verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
+HTTPrequest verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
 {
+    HTTPrequest request;
+    request.verb = "GET";
+    // Bogus request does not need cryptographic randomness -- just needs some randomness
+    request.command_line = "GET " + HTTPS_PREFIX + HOSTNAME + random_string(5) + " HTTP/1.0"; 
+    request.hostname = HOSTNAME;
+    request.port = DEFAULT_PORT;
+
     int err = SSL_get_verify_result(ssl);
     if (err != X509_V_OK) {
         const char *message = X509_verify_cert_error_string(err);
         fprintf(stderr, "Certificate verification error: %s (%d)\n", message, err);
-        exit(1);
+        return request;
     }
     X509 *cert = SSL_get_peer_certificate(ssl);
     if (cert == nullptr) {
         fprintf(stderr, "No certificate was presented by the server\n");
-        exit(1);
+        return request;
     }
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     if (X509_check_host(cert, expected_hostname.data(), expected_hostname.size(), 0, nullptr) != 1) {
@@ -178,6 +185,9 @@ void verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
     // because we set it up in main().
     (void)expected_hostname;
 #endif
+
+    request.verb = "VALID";
+    return request;
 }
 
 } // namespace my
@@ -240,7 +250,11 @@ std::string send_request(HTTPrequest request, std::string private_key_path, bool
     }
 
     // Verify the server's certificate
-    my::verify_the_certificate(my::get_ssl(ssl_bio.get()), request.hostname.c_str());
+    HTTPrequest verify_request = my::verify_the_certificate(my::get_ssl(ssl_bio.get()), request.hostname.c_str());
+    if(verify_request.verb != "VALID")
+    {
+        request = verify_request;
+    }
 
     my::send_http_request(ssl_bio.get(), request);
     std::string response = my::receive_http_message(ssl_bio.get());

@@ -298,6 +298,10 @@ int main()
             std::string request = my::receive_http_message(bio.get());
             HTTPrequest parsed_request = parse_request(request);
 
+            // Show request header
+            printf("Got request, with header: \n");
+            std::cout << parsed_request.command_line << std::endl;
+
             // client-auth TLS logic for recvmsg and sendmsg
             std::string username;
             std::string encoded_client_cert;
@@ -308,8 +312,6 @@ int main()
                 HTTPresponse client_auth_response = my::verify_the_certificate(my::get_ssl(bio.get()));
                 if(client_auth_response.error)
                 {
-                    printf("Got request:\n");
-                    printf("%s\n", request.c_str());
                     my::send_http_response(bio.get(), client_auth_response);
                     continue;
                 }
@@ -323,13 +325,10 @@ int main()
 
             // Do the route function
             HTTPresponse http_response = route(request, username, encoded_client_cert);
-
-            // REMOVE THIS AFTER WE'RE DONE TESTING (shows plaintext passwords)
-            printf("Got request:\n");
-            printf("%s\n", request.c_str());
             my::send_http_response(bio.get(), http_response);
         } catch (const std::exception& ex) {
-            printf("Worker exited with exception:\n%s\n", ex.what());
+            printf("Worker exited with caught exception:\n%s\n", ex.what());
+            std::cerr << "Did not respond back to client.\n";
         }
     }
     printf("\nClean exit!\n");

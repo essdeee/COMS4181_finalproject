@@ -122,7 +122,6 @@ int main(int argc, char *argv[])
 		//read first arg and decode as X509_REQ
 		std::string csrStr = argv[1];
 		std::string username = argv[2];
-		std::cout << csrStr;
 		std::vector<uint8_t> csrBytes = base64_decode(csrStr);
 		uint8_t *csr_data = csrBytes.data();
 

@@ -168,12 +168,20 @@ bool doesMailboxExist(const std::string &s)
 std::string parse_url(std::string url)
 {
     // Find first occurence of ://
-    size_t found = url.find_first_of(":");
-    std::string protocol=url.substr(0,found); 
+    std::string path;
+    try
+    {
+        size_t found = url.find_first_of(":");
+        std::string protocol=url.substr(0,found); 
+        std::string url_new=url.substr(found+4); //url_new is the url excluding the https part
+        size_t found2 = url_new.find_first_of("/");
+        path =url_new.substr(found2);
+    }
+    catch(const std::exception& ex)
+    {
+        return url;
+    }
 
-    std::string url_new=url.substr(found+4); //url_new is the url excluding the https part
-    size_t found2 = url_new.find_first_of("/");
-    std::string path =url_new.substr(found2);
     return path;
 }
 
