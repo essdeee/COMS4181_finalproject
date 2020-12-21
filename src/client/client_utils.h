@@ -9,7 +9,10 @@
 #define USERNAME_MAX 255
 #define PASSWORD_MAX 255
 extern const std::string SAVE_CERT_PATH;
-extern const std::string PRIVATE_KEY_PATH;
+// extern const std::string PRIVATE_KEY_PATH;
+extern const std::string PRIVATE_KEY_PREFIX;
+extern const std::string PRIVATE_KEY_SUFFIX;
+extern const std::string NEW_KEY_PATH;
 extern const std::string CA_CERT_PATH;
 extern const std::string CAT_CERT_KEY_PATH;
 extern const std::string SIGN_TMP;
@@ -45,5 +48,6 @@ int verify(std::string cert_key, std::string file_to_verify, std::string verifie
 
 std::string base64_encode(BYTE const* buf, unsigned long bufLen);
 std::vector<BYTE> base64_decode(std::string const&);
+int replace_file(std::string out, std::string in);
 
 #endif

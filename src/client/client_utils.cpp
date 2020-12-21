@@ -13,7 +13,10 @@
 
 /**************************** CONSTANTS ******************************/
 const std::string SAVE_CERT_PATH = "keypair/client.pem";
-const std::string PRIVATE_KEY_PATH = "keypair/client.key.pem";
+// const std::string PRIVATE_KEY_PATH = "keypair/client.key.pem"; Deprecated after switch to multiuser system
+const std::string PRIVATE_KEY_SUFFIX = ".key.pem";
+const std::string PRIVATE_KEY_PREFIX = "keypair/";
+const std::string NEW_KEY_PATH = "keypair/new.key.pem";
 const std::string CA_CERT_PATH = "keypair/cacert.pem"; // Trusted CA Cert for authenticating the server
 const std::string CAT_CERT_KEY_PATH = "keypair/client_cert_key.pem";
 
@@ -186,7 +189,7 @@ std::vector<BYTE> gen_csr(std::string client_name)
     if(ret != 1){
         goto free_all;
     }
-    private_key_to_pem(r, PRIVATE_KEY_PATH.c_str());
+    private_key_to_pem(r, NEW_KEY_PATH.c_str());
 
     // 2. set version of x509 req
     x509_req = X509_REQ_new();
@@ -729,4 +732,28 @@ std::vector<BYTE> base64_decode(std::string const& encoded_string) {
   }
 
   return ret;
+}
+
+int replace_file(std::string out, std::string in)
+{
+    std::ifstream infile(in, std::ios_base::in | std::ios_base::binary);
+    std::ofstream outfile(out, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+
+    if(infile.good() && outfile.good())
+    {
+        char buf[1024];
+        do {
+            infile.read(&buf[0], 1024);
+            outfile.write(&buf[0], infile.gcount());
+        } while (infile.gcount() > 0);
+
+        infile.close();
+        outfile.close();
+        return 0;
+    }
+    else
+    {
+        std::cerr << "Could not replace file " + out + " with " + in + ".\n";
+        return 1;
+    }
 }

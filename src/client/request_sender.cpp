@@ -182,7 +182,7 @@ void verify_the_certificate(SSL *ssl, const std::string& expected_hostname)
 
 } // namespace my
 
-std::string send_request(HTTPrequest request, bool client_auth)
+std::string send_request(HTTPrequest request, std::string private_key_path, bool client_auth)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_library_init();
@@ -199,11 +199,16 @@ std::string send_request(HTTPrequest request, bool client_auth)
 
     if(client_auth)
     {
+        if(private_key_path.empty())
+        {
+            my::print_errors_and_exit("Did not provide private key path.\n");
+        }
+
         // For client-authenticated mTLS connection, load certificate and private key
         if (SSL_CTX_use_certificate_file(ctx.get(), SAVE_CERT_PATH.c_str(), SSL_FILETYPE_PEM) <= 0) {
             my::print_errors_and_exit("Error loading client certificate");
         }
-        if (SSL_CTX_use_PrivateKey_file(ctx.get(), PRIVATE_KEY_PATH.c_str(), SSL_FILETYPE_PEM) <= 0) {
+        if (SSL_CTX_use_PrivateKey_file(ctx.get(), private_key_path.c_str(), SSL_FILETYPE_PEM) <= 0) {
             my::print_errors_and_exit("Error loading client private key");
         }
     }

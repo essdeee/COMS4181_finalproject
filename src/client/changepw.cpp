@@ -137,8 +137,9 @@ int main(int argc, char* argv[])
     // Generate HTTP request
     HTTPrequest request = changepw_request(username, old_password, new_password, csr);
 
-    // Send cleint request and receive response. Client authentication FALSE.
-    std::string response = send_request(request, false);    
+    // Send client request and receive response. Client authentication FALSE.
+    std::string empty_string;
+    std::string response = send_request(request, empty_string, false);    
 
     // Write cert (from server response) to file    
     std::string certstr = changepw_response(response);
@@ -152,6 +153,7 @@ int main(int argc, char* argv[])
     }
 
     // PEM write methods have 0 for failure and 1 for success
+    std::string private_key_path = PRIVATE_KEY_PREFIX + username + PRIVATE_KEY_SUFFIX;
     if(save_cert(certstr, SAVE_CERT_PATH) == 0)
     {
         std::cerr << "Could not successfully save certificate on client end.\n";
@@ -159,19 +161,16 @@ int main(int argc, char* argv[])
     }
     else
     {
+        int ret = replace_file(private_key_path, NEW_KEY_PATH);
+        remove(NEW_KEY_PATH.c_str());
         std::cout << "Password changed. New certificate successfully saved as " + SAVE_CERT_PATH + "\n";
-    }
-
-    // Append the key to the cert for crypto methods
-    if(remove(CAT_CERT_KEY_PATH.c_str()))
-    {
-        std::cerr << "Could not remove existing catted cert_key in " + CAT_CERT_KEY_PATH << std::endl;
-        return 1;
+        std::cout << "Private key in " + private_key_path + "\n";
     }
     
+    remove(CAT_CERT_KEY_PATH.c_str());
     appendFile(CAT_CERT_KEY_PATH, SAVE_CERT_PATH);
-    appendFile(CAT_CERT_KEY_PATH, PRIVATE_KEY_PATH);
+    appendFile(CAT_CERT_KEY_PATH, private_key_path);
     std::cout << "Appending certificate to key to make " + CAT_CERT_KEY_PATH << std::endl;
-    
+    std::cout << "LOGGED IN AS: " << username << "." << std::endl;
     return 0;
 }
