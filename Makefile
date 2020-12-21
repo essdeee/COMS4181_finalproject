@@ -92,3 +92,9 @@ request_sender.o: src/client/request_sender.cpp
 .PHONY: clean
 clean:
 	rm *.o request-handler cert-gen verify-pass update-pass fetch-cert mail-out mail-in getcert changepw sendmsg recvmsg
+
+.PHONY: uninstall
+uninstall:
+	make clean
+	sudo rm -rf certs
+	sudo rm -rf system

@@ -52,6 +52,16 @@ chown cert-gen-usr system/server/handler/client_certs/certs
 chmod 700 system/server/handler/client_certs/certs
 setfacl -m "u:fetch-cert-usr:r-x" system/server/handler/client_certs/certs
 
+chown cert-gen-usr system/server/handler/client_certs/ca-cert/cacert.pem
+chmod 400 system/server/handler/client_certs/ca-cert/cacert.pem
+
+chown cert-gen-usr system/server/handler/client_certs/ca-cert/ca.key.pem
+chmod 400 system/server/handler/client_certs/ca-cert/ca.key.pem
+
 chown cert-gen-usr system/server/handler/client_certs/ca-cert
 chmod 500 system/server/handler/client_certs/ca-cert
 
+chown cert-gen-usr system/server/handler/client_certs/tmp
+chmod 700 system/server/handler/client_certs/tmp
+setfacl -m "u:root:r-x" system/server/handler/client_certs/tmp
+setfacl -m "u:fetch-cert-usr:rwx" system/server/handler/client_certs/tmp

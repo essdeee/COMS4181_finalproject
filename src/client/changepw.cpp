@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
         return 1;
     }
     
-    appendFile(CAT_CERT_KEY_PATH, "client.pem");
+    appendFile(CAT_CERT_KEY_PATH, SAVE_CERT_PATH);
     appendFile(CAT_CERT_KEY_PATH, PRIVATE_KEY_PATH);
     std::cout << "Appending certificate to key to make " + CAT_CERT_KEY_PATH << std::endl;
     

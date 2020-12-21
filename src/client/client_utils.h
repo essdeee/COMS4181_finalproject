@@ -18,6 +18,7 @@ extern const std::string TMP_DECODED_MSG;
 extern const std::string TMP_DECODED_CERT;
 extern const std::string TMP_DECRYPTED_MSG;
 extern const std::string VERIFIED_MSG;
+extern const std::string TMP_ENCRYPT_FILE;
 
 typedef uint8_t BYTE;
 

@@ -2,7 +2,7 @@
 
 #create sandbox dirs
 cd system/server/handler/
-mkdir -p password/{bin,tmp,lib/x86_64-linux-gnu,lib64,pass}
+mkdir -p password/{bin,lib/x86_64-linux-gnu,lib64,pass}
 cd ../../../
 
 
@@ -46,3 +46,6 @@ chown update-pass-usr system/server/handler/password/pass
 chmod 500 system/server/handler/password/pass
 setfacl -m "u:verify-pass-usr:r-x" system/server/handler/password/pass
 
+chown update-pass-usr system/server/handler/password/pass/shadow
+chmod 600 system/server/handler/password/pass/shadow
+setfacl -m "u:verify-pass-usr:r--" system/server/handler/password/pass/shadow

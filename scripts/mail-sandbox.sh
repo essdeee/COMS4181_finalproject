@@ -45,3 +45,19 @@ setfacl -m "u:root:--x" system/server/handler/mail/bin/mail-out
 
 chown root system/server/handler/mail/bin
 chmod 500 system/server/handler/mail/bin
+
+chown mail-in-usr system/server/handler/mail/tmp
+chmod 700 system/server/handler/mail/tmp
+setfacl -m "u:root:r-x" system/server/handler/mail/tmp
+setfacl -m "u:mail-out-usr:rwx" system/server/handler/mail/tmp
+
+chown mail-in-usr system/server/handler/mail/mail
+chmod 700 system/server/handler/mail/mail
+setfacl -m "u:mail-out-usr:rwx" system/server/handler/mail/mail
+
+for value in {addleness,analects,annalistic,anthropomorphologically,blepharosphincterectomy,corector,durwaun,dysphasia,encampment,endoscopic,exilic,forfend,gorbellied,gushiness,muermo,neckar,outmate,outroll,overrich,philosophicotheological,pockwood,polypose,refluxed,reinsure,repine,scerne,starshine,unauthoritativeness,unminced,unrosed,untranquil,urushinic,vegetocarbonaceous,wamara,whaledom}
+do
+    chown mail-in-usr system/server/handler/mail/mail/$value
+    chmod 700 system/server/handler/mail/mail/$value
+    setfacl -m "u:mail-out-usr:rwx" system/server/handler/mail/mail/$value
+done

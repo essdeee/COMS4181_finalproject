@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
     }
 
     std::string new_mail_path = newMailPath(recipient, next_file_name); // Get path to write to
+    std::cout << "HERE IS THE PATH: " << new_mail_path << std::endl;
 
     // Write to the correct mailbox
     std::ofstream new_file;

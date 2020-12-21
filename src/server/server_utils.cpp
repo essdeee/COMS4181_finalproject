@@ -23,12 +23,12 @@ const std::string SERVER_PRIVATE_KEY = "server_cert/server-key.pem";
 const std::string MAIL_OUT_SEND = "send";
 const std::string MAIL_OUT_PEEK = "peek";
 
-const std::string MAILBOX_PREFIX = "mail/";
-const std::string CERTS_PREFIX = "client_certs/";
+const std::string MAILBOX_PREFIX = "mail/mail/";
+const std::string CERTS_PREFIX = "client_certs/certs/";
 
-const std::string CA_CERT_PATH = "client_certs/ca-cert/ca.cert.pem";
+const std::string CA_CERT_PATH = "client_certs/ca-cert/cacert.pem";
 const std::string CA_KEY_PATH = "client_certs/ca-cert/ca.key.pem";
-const std::string CA_KEY_PASS = "pass";
+const std::string CA_KEY_PASS = "toor";
 
 const std::string DEFAULT_PORT = "8080";
 
@@ -280,6 +280,10 @@ HTTPresponse route(const std::string request, const std::string username, const 
 void write_file(std::string str, std::string filename)
 {
 	std::ofstream file(filename);
+    if(!file.good())
+    {
+        std::cerr << "Error writing to file " + filename + "\n";
+    }
   	file << str;
 	file.close();
 }
@@ -293,8 +297,7 @@ and returns the next number.
 std::string get_stem(const fs::path &p) { return (p.stem().string()); }
 std::string getNextNumber(const std::string &mailbox_name)
 {
-    std::string mail_prefix = MAILBOX_PREFIX;
-    std::string mailbox_path = mail_prefix + mailbox_name;
+    std::string mailbox_path = MAILBOX_PREFIX + mailbox_name;
     std::vector<std::string> files;
 
     // Iterate over the directory
@@ -367,8 +370,7 @@ std::string getNextNumber(const std::string &mailbox_name)
 
 std::string getEarliestNumberPath(const std::string &mailbox_name)
 {
-    std::string mail_prefix = MAILBOX_PREFIX;
-    std::string mailbox_path = mail_prefix + mailbox_name;
+    std::string mailbox_path = MAILBOX_PREFIX + mailbox_name;
     std::vector<std::string> files;
 
     // Iterate over the directory
@@ -462,8 +464,8 @@ Gives back the appropriate path to write the new mailed file to.
 */
 std::string newMailPath(const std::string &mailbox_name, const std::string &file_name)
 {
-    const std::string mail_prefix = MAILBOX_PREFIX;
-    std::string mailbox_path = mail_prefix + mailbox_name + "/" + file_name;
+    //std::string mailbox_path = MAILBOX_PREFIX + mailbox_name + "/" + file_name;
+    std::string mailbox_path = MAILBOX_PREFIX + mailbox_name + "/" + file_name;
     return mailbox_path;
 }
 

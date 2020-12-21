@@ -44,3 +44,6 @@ chmod u+s system/client/bin/recvmsg
 chown get-cert-usr system/client/keypair
 chmod 700 system/client/keypair
 setfacl -m "u:auth-cert-usr:r-x" system/client/keypair
+
+chown auth-cert-usr system/client/tmp
+chmod 700 system/client/tmp

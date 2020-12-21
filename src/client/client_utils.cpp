@@ -21,6 +21,7 @@ const std::string SIGN_TMP = "tmp/sign-tmp.txt";
 const std::string TMP_DECODED_MSG = "tmp/decoded-msg-tmp.txt";
 const std::string TMP_DECODED_CERT = "tmp/decoded-cert-temp.pem";
 const std::string TMP_DECRYPTED_MSG = "tmp/decrypted-tmp.txt";
+const std::string TMP_ENCRYPT_FILE = "tmp/tmp_encr.txt";
 const std::string VERIFIED_MSG = "tmp/recvd_msg.txt";
 
 /**************************** FUNCTIONS ******************************/
@@ -185,7 +186,7 @@ std::vector<BYTE> gen_csr(std::string client_name)
     if(ret != 1){
         goto free_all;
     }
-    private_key_to_pem(r, "client.key.pem");
+    private_key_to_pem(r, PRIVATE_KEY_PATH.c_str());
 
     // 2. set version of x509 req
     x509_req = X509_REQ_new();
@@ -389,7 +390,7 @@ std::vector<BYTE> encrypt(std::string cert_key, std::string file_path)
     int ret = 1;
 
     std::ifstream file;
-    const std::string TMP_ENCRYPT_FILE = "tmp_encr.txt";
+    
     std::vector<BYTE> buffer;
     size_t length;
 
