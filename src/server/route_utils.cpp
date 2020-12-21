@@ -60,11 +60,13 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
             // arg[0] = username
             // arg[1] = password
             close(pipe_fd[0]);               // Close the reading end of the pipe
+            chroot(PASSWORD_SANDBOX.c_str());
             status = execl(VERIFY_PASS_PATH.c_str(), VERIFY_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "update-pass" )
         {
             close(pipe_fd[0]);               // Close the reading end of the pipe
+            chroot(PASSWORD_SANDBOX.c_str());
             status = execl(UPDATE_PASS_PATH.c_str(), UPDATE_PASS_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "cert-gen" )
@@ -72,20 +74,24 @@ int call_server_program(std::string program_name, std::vector<std::string> args)
             // arg[0] = csr string
             // arg[1] = username (to save cert in correct place)
             close(pipe_fd[0]);               // Close the reading end of the pipe
+            chroot(CERTS_SANDBOX.c_str());
             status = execl(CERT_GEN_PATH.c_str(), CERT_GEN_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "fetch-cert" )
         {
             close(pipe_fd[0]);               // Close the reading end of the pipe
+            chroot(CERTS_SANDBOX.c_str());
             status = execl(FETCH_CERT_PATH.c_str(), FETCH_CERT_PATH.c_str(), args[0].c_str(), NULL);
         }
         else if ( program_name == "mail-out" )
         {
             close(pipe_fd[0]);               // Close the reading end of the pipe
+            chroot(MAIL_SANDBOX.c_str());
             status = execl(MAIL_OUT_PATH.c_str(), MAIL_OUT_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
         else if ( program_name == "mail-in" )
         {
+            chroot(MAIL_SANDBOX.c_str());
             status = execl(MAIL_IN_PATH.c_str(), MAIL_IN_PATH.c_str(), args[0].c_str(), args[1].c_str(), NULL);
         }
     } 

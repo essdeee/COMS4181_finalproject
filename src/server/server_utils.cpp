@@ -32,6 +32,10 @@ const std::string CA_KEY_PASS = "toor";
 
 const std::string DEFAULT_PORT = "8080";
 
+const std::string PASSWORD_SANDBOX = "password";
+const std::string CERTS_SANDBOX = "client_certs";
+const std::string MAIL_SANDBOX = "mail";
+
 std::string generateSalt() 
 {
     const char alphanum[] =

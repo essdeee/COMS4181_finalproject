@@ -29,6 +29,10 @@ extern const std::string CA_KEY_PATH;
 extern const std::string DEFAULT_PORT;
 extern const std::string CA_KEY_PASS;
 
+extern const std::string PASSWORD_SANDBOX;
+extern const std::string CERTS_SANDBOX;
+extern const std::string MAIL_SANDBOX;
+
 typedef uint8_t BYTE;
 
 /**************************** OBJECTS ********************************/

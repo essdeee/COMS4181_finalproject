@@ -24,8 +24,7 @@ cp $HOME/../../lib64/ld-linux-x86-64.so.2 system/server/handler/lib64/ld-linux-x
 
 #set owners and permissions
 chown root system/server/handler/bin/request-handler
-chmod 101 system/server/handler/bin/request-handler
-chmod u+s system/server/handler/bin/request-handler
+chmod 100 system/server/handler/bin/request-handler
 
 chown root system/server/handler/bin
 chmod 505 system/server/handler/bin
