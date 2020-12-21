@@ -2,7 +2,7 @@
 
 #create sandbox dirs
 cd system/
-mkdir -p client/{bin,tmp,keypair}
+mkdir -p client/{bin,tmp,keypair,outbound}
 cd ../
 
 
@@ -47,3 +47,5 @@ setfacl -m "u:auth-cert-usr:r-x" system/client/keypair
 
 chown auth-cert-usr system/client/tmp
 chmod 700 system/client/tmp
+
+chmod 707 system/client/outbound
