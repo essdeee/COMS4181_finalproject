@@ -13,14 +13,14 @@ pause 'Press [Enter] key to continue...'
 echo ''
 
 echo 'getcert- buffer overflow in username test:'
-echo 'running bin/getcert invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattempt'
-bin/getcert invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattempt
+echo 'running bin/getcert invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -p pass'
+bin/getcert invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -p pass
 pause 'Press [Enter] key to continue...'
 echo ''
 
 echo 'getcert- invalid username test:'
-echo 'running bin/getcert invalidusername'
-bin/getcert invalidusername
+echo 'running bin/getcert invalidusername -p pass'
+bin/getcert invalidusername -p pass
 pause 'Press [Enter] key to continue...'
 echo ''
 
@@ -31,8 +31,8 @@ pause 'Press [Enter] key to continue...'
 echo ''
 
 echo 'getcert- buffer overflow in password test:'
-echo 'running bin/getcert addleness -p invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattempt'
-bin/getcert addleness -p invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattempt 
+echo 'running bin/getcert addleness -p invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+bin/getcert addleness -p invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 pause 'Press [Enter] key to continue...'
 echo ''
 

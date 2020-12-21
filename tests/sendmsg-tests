@@ -1,0 +1,46 @@
+#!/bin/bash
+
+function pause(){
+read -p "$*"
+}
+
+cd system/client
+
+echo 'running echo 'Test message' >> outbound/00002'
+echo 'Test message' >> outbound/00002
+
+echo 'sendmsg- valid test:'
+echo 'running bin/sendmsg addleness outbound/00002 addleness'
+bin/sendmsg addleness outbound/00002 addleness
+pause 'Press [Enter] key to continue...'
+echo ''
+
+echo 'sendmsg- valid and invalid recipients test:'
+echo 'running bin/sendmsg addleness outbound/00002 addleness invalidusername'
+bin/sendmsg addleness outbound/00002 addleness invalidusername
+pause 'Press [Enter] key to continue...'
+echo ''
+
+echo 'sendmsg- sender username buffer overflow test:'
+echo 'running bin/sendmsg invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa outbound/00002 addleness'
+bin/sendmsg invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa outbound/00002 addleness
+pause 'Press [Enter] key to continue...'
+echo ''
+
+echo 'sendmsg- recipient username buffer overflow test:'
+echo 'running bin/sendmsg addleness outbound/00002 invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+bin/sendmsg addleness outbound/00002 invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+pause 'Press [Enter] key to continue...'
+echo ''
+
+echo 'sendmsg- duplicate recipient test:'
+echo 'running bin/sendmsg addleness outbound/00002 addleness addleness'
+bin/sendmsg addleness outbound/00002 addleness addleness
+pause 'Press [Enter] key to continue...'
+echo ''
+
+echo 'sendmsg- many recipients buffer overflow test:'
+echo 'running bin/sendmsg addleness outbound/00002 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36'
+bin/sendmsg addleness outbound/00002 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36
+pause 'Press [Enter] key to continue...'
+echo ''

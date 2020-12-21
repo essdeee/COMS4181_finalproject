@@ -15,33 +15,40 @@ echo ''
 echo 'changepw- unread messages test:'
 echo 'running echo 'Test message' >> outbound/00001'
 echo 'Test message' >> outbound/00001
-echo 'running bin/sendmsg outbound/00001 addleness -p Cardin_pwns
-echo 'running bin/changepw addleness -op Cardin_pwns -np Cardin_pwns2'
-bin/getcert addleness -op Cardin_pwns -np Cardin_pwns2
+echo 'running bin/sendmsg addleness outbound/00001 addleness -p Cardin_pwns2'
+bin/sendmsg addleness outbound/00001 addleness
+echo 'running bin/changepw addleness -op Cardin_pwns2 -np Cardin_pwns3'
+bin/getcert addleness -op Cardin_pwns2 -np Cardin_pwns3
 pause 'Press [Enter] key to continue...'
 echo ''
 
-echo 'getcert- buffer overflow in username test:'
-echo 'running bin/getcert invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattempt'
-bin/getcert invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattempt
+echo 'changepw- buffer overflow in username test:'
+echo 'running bin/changepw invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -np npass -op opass'
+bin/changepw invaliduserrnamethatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -np npass -op opass
 pause 'Press [Enter] key to continue...'
 echo ''
 
-echo 'getcert- invalid username test:'
-echo 'running bin/getcert invalidusername'
-bin/getcert invalidusername
+echo 'changepw- invalid username test:'
+echo 'running bin/changepw invalidusername -np npass -op opass'
+bin/changepw invalidusername -np npass -op opass
 pause 'Press [Enter] key to continue...'
 echo ''
 
-echo 'getcert- invalid password test:'
-echo 'running bin/getcert addleness -p invalidpassword'
-bin/getcert addleness -p invalidpassword
+echo 'changepw- invalid password test:'
+echo 'running bin/changepw addleness -op invalidpassword -np npass'
+bin/changepw addleness -op invalidpassword -np npass
 pause 'Press [Enter] key to continue...'
 echo ''
 
-echo 'getcert- buffer overflow in password test:'
-echo 'running bin/getcert addleness -p invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattempt'
-bin/getcert addleness -p invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattempt 
+echo 'changepw- buffer overflow in old password test:'
+echo 'running bin/changepw addleness -op invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -np npass'
+bin/changepw addleness -op invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -np npass 
+pause 'Press [Enter] key to continue...'
+echo ''
+
+echo 'changepw- buffer overflow in new password test:'
+echo 'running bin/changepw addleness -op Cardin_pwns2 -np invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+bin/changepw addleness -op Cardin_pwns2 -np invalidpasswordthatismuchtoolongandcouldbeapotentialoverflowattemptaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 pause 'Press [Enter] key to continue...'
 echo ''
 
