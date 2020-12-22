@@ -133,12 +133,19 @@ int main(int argc, char* argv[])
         std::string recipient = argv[i];
 
         // Validate username length and characters
-        if(recipient.length() > USERNAME_MAX && !validMailboxChars(recipient))
+        if(recipient.length() > USERNAME_MAX || !validMailboxChars(recipient))
         {
             std::cerr << "Username invalid (too long or invalid characters). Aborting.\n";
             return 1;
         }
         recipients.push_back(recipient);
+    }
+
+    // Max recipients is 35 (the number installed on the system)
+    if(recipients.size() > RECIPIENTS_MAX)
+    {
+        std::cerr << "Too many recipients in request. Please shorten your list of recipients or split it up over multiple requests.\n";
+        return 1;
     }
 
     // Check if message filepath exists

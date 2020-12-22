@@ -115,17 +115,17 @@ int main(int argc, char* argv[])
     }
 
     // Validate username and password lengths
-    if(username.length() > USERNAME_MAX && !validMailboxChars(username))
+    if(username.length() > USERNAME_MAX || !validMailboxChars(username))
     {
         std::cerr << "Username invalid (too long or invalid characters). Aborting.\n";
         return 1;
     }
-    if(old_password.length() > PASSWORD_MAX && !validPasswordChars(old_password))
+    if(old_password.length() > PASSWORD_MAX || !validPasswordChars(old_password))
     {
         std::cerr << "Old password invalid (invalid characters). Aborting.\n";
         return 1;
     }
-    if(new_password.length() > PASSWORD_MAX && !validPasswordChars(new_password))
+    if(new_password.length() > PASSWORD_MAX || !validPasswordChars(new_password))
     {
         std::cerr << "New password invalid (invalid characters). Aborting.\n";
         return 1;

@@ -8,6 +8,7 @@
 /**************************** CONSTANTS ******************************/
 #define USERNAME_MAX 255
 #define PASSWORD_MAX 255
+#define RECIPIENTS_MAX 35
 extern const std::string SAVE_CERT_PATH;
 // extern const std::string PRIVATE_KEY_PATH;
 extern const std::string PRIVATE_KEY_PREFIX;
