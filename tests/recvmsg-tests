@@ -8,28 +8,16 @@ cd system/client
 
 
 echo 'recvmsg- valid test:'
-echo 'running bin/recvmsg addleness'
-bin/recvmsg addleness
+echo 'running bin/recvmsg'
+bin/recvmsg
 pause 'Press [Enter] key to continue...'
 echo ''
 
 echo 'recvmsg- no messages test:'
 echo 'running bin/getcert analects -p pass'
 bin/getcert analects -p pass
-echo 'running bin/recvmsg analects'
-bin/recvmsg analects
-pause 'Press [Enter] key to continue...'
-echo ''
-
-echo 'recvmsg- not logged in user test:'
-echo 'running bin/recvmsg addleness'
-bin/recvmsg addleness
-pause 'Press [Enter] key to continue...'
-echo ''
-
-echo 'recvmsg- invalid username test:'
-echo 'running bin/recvmsg invalidusername'
-bin/recvmsg invalidusername
+echo 'running bin/recvmsg'
+bin/recvmsg
 pause 'Press [Enter] key to continue...'
 echo ''
 
