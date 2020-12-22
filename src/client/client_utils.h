@@ -9,6 +9,8 @@
 #define USERNAME_MAX 255
 #define PASSWORD_MAX 255
 #define RECIPIENTS_MAX 35
+#define MAX_MSG_SIZE 25000000 // 25 MB
+
 extern const std::string SAVE_CERT_PATH;
 // extern const std::string PRIVATE_KEY_PATH;
 extern const std::string PRIVATE_KEY_PREFIX;
@@ -23,6 +25,7 @@ extern const std::string TMP_DECODED_CERT;
 extern const std::string TMP_DECRYPTED_MSG;
 extern const std::string VERIFIED_MSG;
 extern const std::string TMP_ENCRYPT_FILE;
+extern const std::string CURRENT_LOGIN_FILE;
 
 typedef uint8_t BYTE;
 

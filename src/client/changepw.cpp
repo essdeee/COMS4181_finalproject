@@ -172,5 +172,20 @@ int main(int argc, char* argv[])
     appendFile(CAT_CERT_KEY_PATH, private_key_path);
     std::cout << "Appending certificate to key to make " + CAT_CERT_KEY_PATH << std::endl;
     std::cout << "LOGGED IN AS: " << username << "." << std::endl;
+
+    // Save current logged in user
+    std::ofstream current_login;
+    current_login.open(CURRENT_LOGIN_FILE);
+    if(current_login.good())
+    {
+        current_login << username;
+        current_login.close();
+    }
+    else
+    {
+        std::cerr << "Could not successfully login user. Please try logging in again with getcert.\n";
+        return 1;
+    }
+    
     return 0;
 }
