@@ -11,3 +11,18 @@ Automated Test Cases
 3. run “make test”
 
 Manual Test Cases
+1. With the server running open another ssh connection to the VM
+2. CD to the directory COMS4181_finalproject
+3. CD into system
+4. CD into client
+5. Run 'bin/getcert addleness'
+6. In the password prompt enter 'pass; rm *'
+7. Confirm an error message is given
+8. Run 'bin/changepw addleness'
+9. In the password prompt enter 'pass; rm *'
+10. In the new password prompts enter the same value
+11. Confirm an error message is given                
+12. Run 'bin/changepw addleness'
+13. In the password prompt enter 'Cardin_pwns2'
+14. In the new password prompts enter 'pass; rm *'
+15. Confirm an error message is given
