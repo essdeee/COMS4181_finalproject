@@ -45,12 +45,6 @@ bool validMailboxChars(const std::string &str)
         return false;
     }
 
-    // First character must be alphabetic
-    if (!std::isalpha(str[0]))
-    {
-        return false;
-    }
-
     for(char const &c : str)
     {
         if (!std::isalpha(c) && 

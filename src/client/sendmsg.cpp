@@ -139,14 +139,15 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    if(username.length() > USERNAME_MAX || !validMailboxChars(username))
+    {
+        std::cerr << "Invalid username in current login file. Aborting...\n";
+        return 1;
+    }
+
     // Parse out the file name and recipients from the command
     std::vector<std::string> recipients;
     std::string msg_name = argv[1];
-    if(username.length() > USERNAME_MAX || !validMailboxChars(username))
-    {
-        std::cerr << "Provided invalid username as sender. Aborting...\n";
-        return 1;
-    }
 
     // Parse out recipients
     for (int i = 2; i < argc; i++)
@@ -172,7 +173,10 @@ int main(int argc, char* argv[])
     // Deduplicate the recipients
     std::sort(recipients.begin(), recipients.end());
     recipients.erase(unique(recipients.begin(), recipients.end()), recipients.end());
-    
+    if(argc - 2 != recipients.size())
+    {
+        std::cout << "Duplicate found. Message will only be sent once for duplicates.\n";
+    }
 
     // Check if message filepath exists
     std::ifstream f(msg_name);
