@@ -172,6 +172,7 @@ int main(int argc, char* argv[])
     // Deduplicate the recipients
     std::sort(recipients.begin(), recipients.end());
     recipients.erase(unique(recipients.begin(), recipients.end()), recipients.end());
+    
 
     // Check if message filepath exists
     std::ifstream f(msg_name);

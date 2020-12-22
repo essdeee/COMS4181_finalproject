@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     }
     if(password.length() > PASSWORD_MAX || !validPasswordChars(password))
     {
-        std::cerr << "Password invalid (invalid characters). Aborting.\n";
+        std::cerr << "Password invalid (too long or invalid characters). Aborting.\n";
         return 1;
     }
 
