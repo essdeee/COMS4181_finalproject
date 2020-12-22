@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 HTTPrequest sendmsg_encrypt_request(std::vector<std::string> recipients)
 {
@@ -139,13 +140,21 @@ int main(int argc, char* argv[])
             return 1;
         }
         recipients.push_back(recipient);
-    }
+    }    
 
     // Max recipients is 35 (the number installed on the system)
     if(recipients.size() > RECIPIENTS_MAX)
     {
         std::cerr << "Too many recipients in request. Please shorten your list of recipients or split it up over multiple requests.\n";
         return 1;
+    }
+
+    // Deduplicate the recipients
+    std::sort(recipients.begin(), recipients.end());
+    recipients.erase(unique(recipients.begin(), recipients.end()), recipients.end());
+    for(std::string recipient : recipients)
+    {
+        std::cout << recipient << std::endl;
     }
 
     // Check if message filepath exists
