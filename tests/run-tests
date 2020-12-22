@@ -44,4 +44,4 @@ echo ''
 
 tests/endtoend-tests
 
-echo 'See TestSteps.txt for manual test cases'
+echo 'See TestSteps for manual test cases'

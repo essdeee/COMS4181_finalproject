@@ -9,6 +9,10 @@ install: request-handler cert-gen fetch-cert verify-pass update-pass mail-out ma
 	sudo scripts/install-system.sh
 	make clean
 
+.PHONY: test
+test:
+	tests/run-tests
+
 request-handler: request-handler.o route_utils.o server_utils.o
 	g++ request-handler.o route_utils.o server_utils.o -o request-handler -lssl -lcrypto -lcrypt -std=c++17
 

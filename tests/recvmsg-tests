@@ -7,10 +7,6 @@ read -p "$*"
 cd system/client
 
 
-echo 'running echo 'Test message' >> outbound/00003'
-echo 'Test message' >> outbound/00003
-echo ''
-
 echo 'recvmsg- valid test:'
 echo 'running bin/recvmsg addleness'
 bin/recvmsg addleness
@@ -19,7 +15,7 @@ echo ''
 
 echo 'recvmsg- no messages test:'
 echo 'running bin/getcert analects -p pass'
-bin/getcerts analects -p pass
+bin/getcert analects -p pass
 echo 'running bin/recvmsg analects'
 bin/recvmsg analects
 pause 'Press [Enter] key to continue...'
