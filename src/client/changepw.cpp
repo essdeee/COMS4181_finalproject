@@ -115,17 +115,17 @@ int main(int argc, char* argv[])
     }
 
     // Validate username and password lengths
-    if(username.length() > USERNAME_MAX && !validMailboxChars(username))
+    if(username.length() > USERNAME_MAX || !validMailboxChars(username))
     {
         std::cerr << "Username invalid (too long or invalid characters). Aborting.\n";
         return 1;
     }
-    if(old_password.length() > PASSWORD_MAX && !validPasswordChars(old_password))
+    if(old_password.length() > PASSWORD_MAX || !validPasswordChars(old_password))
     {
         std::cerr << "Old password invalid (invalid characters). Aborting.\n";
         return 1;
     }
-    if(new_password.length() > PASSWORD_MAX && !validPasswordChars(new_password))
+    if(new_password.length() > PASSWORD_MAX || !validPasswordChars(new_password))
     {
         std::cerr << "New password invalid (invalid characters). Aborting.\n";
         return 1;
@@ -172,5 +172,20 @@ int main(int argc, char* argv[])
     appendFile(CAT_CERT_KEY_PATH, private_key_path);
     std::cout << "Appending certificate to key to make " + CAT_CERT_KEY_PATH << std::endl;
     std::cout << "LOGGED IN AS: " << username << "." << std::endl;
+
+    // Save current logged in user
+    std::ofstream current_login;
+    current_login.open(CURRENT_LOGIN_FILE);
+    if(current_login.good())
+    {
+        current_login << username;
+        current_login.close();
+    }
+    else
+    {
+        std::cerr << "Could not successfully login user. Please try logging in again with getcert.\n";
+        return 1;
+    }
+    
     return 0;
 }

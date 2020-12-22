@@ -26,6 +26,7 @@ const std::string TMP_DECODED_CERT = "tmp/decoded-cert-temp.pem";
 const std::string TMP_DECRYPTED_MSG = "tmp/decrypted-tmp.txt";
 const std::string TMP_ENCRYPT_FILE = "tmp/tmp_encr.txt";
 const std::string VERIFIED_MSG = "tmp/recvd_msg.txt";
+const std::string CURRENT_LOGIN_FILE = "keypair/current_login";
 
 /**************************** FUNCTIONS ******************************/
 void print_hex(const BYTE* byte_arr, int len)

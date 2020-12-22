@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 HTTPrequest sendmsg_encrypt_request(std::vector<std::string> recipients)
 {
@@ -111,16 +112,36 @@ std::string sendmsg_message_response(std::string server_response)
 
 int main(int argc, char* argv[])
 {
-    if(argc < 4)
+    if(argc < 3)
     {
-        std::cerr << "Incorrect number of args. Expected usage: ./sendmsg <username> <message path> <recipient 1> <recipient 2> ... <recipient n>.\n";
+        std::cerr << "Incorrect number of args. Expected usage: ./sendmsg <message path> <recipient 1> <recipient 2> ... <recipient n>.\n";
+        return 1;
+    }
+
+    // Find current logged in user from current_login file
+    std::ifstream current_login;
+    std::string username;
+    current_login.open(CURRENT_LOGIN_FILE);
+    if(current_login.good())
+    {
+        std::getline(current_login, username);
+        current_login.close();
+    }
+    else
+    {
+        std::cerr << "Could not retrieve current login user from file. User may not yet be logged in (use getcert).\n";
+        return 1;
+    }
+
+    if(username.empty())
+    {
+        std::cerr << "Error reading current login file. User might not be logged in (use getcert).\n";
         return 1;
     }
 
     // Parse out the file name and recipients from the command
     std::vector<std::string> recipients;
-    std::string username = argv[1];
-    std::string msg_name = argv[2];
+    std::string msg_name = argv[1];
     if(username.length() > USERNAME_MAX || !validMailboxChars(username))
     {
         std::cerr << "Provided invalid username as sender. Aborting...\n";
@@ -128,26 +149,46 @@ int main(int argc, char* argv[])
     }
 
     // Parse out recipients
-    for (int i = 3; i < argc; i++)
+    for (int i = 2; i < argc; i++)
     {
         std::string recipient = argv[i];
 
         // Validate username length and characters
-        if(recipient.length() > USERNAME_MAX && !validMailboxChars(recipient))
+        if(recipient.length() > USERNAME_MAX || !validMailboxChars(recipient))
         {
             std::cerr << "Username invalid (too long or invalid characters). Aborting.\n";
             return 1;
         }
         recipients.push_back(recipient);
+    }    
+
+    // Max recipients is 35 (the number installed on the system)
+    if(recipients.size() > RECIPIENTS_MAX)
+    {
+        std::cerr << "Too many recipients in request. Please shorten your list of recipients or split it up over multiple requests.\n";
+        return 1;
     }
+
+    // Deduplicate the recipients
+    std::sort(recipients.begin(), recipients.end());
+    recipients.erase(unique(recipients.begin(), recipients.end()), recipients.end());
 
     // Check if message filepath exists
     std::ifstream f(msg_name);
     if(!f.good())
     {
-        f.close();
         std::cerr << "Message " + msg_name + " does not exist or could not open.\n";
         return 1;
+    }
+    else 
+    {
+        // Validate the file size
+        f.seekg(0, std::ios::end);
+        int file_size = f.tellg();
+        if(file_size > MAX_MSG_SIZE)
+        {
+            std::cerr << "Message too large. Maximum file size is 25 MB.\n";
+        }
     }
     f.close();
 
