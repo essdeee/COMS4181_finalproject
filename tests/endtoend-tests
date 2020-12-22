@@ -11,6 +11,11 @@ echo 'Test message for end to end test sent from annalistic to anthropomorpholog
 pause 'Press [Enter] key to continue...'
 echo ''
 
+echo 'running bin/getcert anthropomorphologically -p likelihoods_hoarsely'
+bin/getcert anthropomorphologically -p likelihoods_hoarsely
+pause 'Press [Enter] key to continue...'
+echo ''
+
 echo 'running bin/getcert annalistic -p thickets_pimping'
 bin/getcert annalistic -p thickets_pimping
 pause 'Press [Enter] key to continue...'
