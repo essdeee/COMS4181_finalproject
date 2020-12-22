@@ -1,12 +1,16 @@
 1. Copy zip folder onto test machine
 2. Run “unzip -q final_proj.zip”
 3. CD into COMS4181_finalproject
-4. Run “sudo apt-get install acl”
-5. Run pwd and copy the full path outputted 
-6. Run “nano scripts/openssl.cnf”
-7. Run “sudo make install”
+4. Run 'sudo apt-get update'
+5. Run 'sudo apt install unzip'
+6. Run 'sudo apt install g++'
+7. Run 'sudo apt-get install build-essential'
+8. Run “sudo apt-get install acl”
+9. Run pwd and copy the full path outputted 
+10. Run “nano scripts/openssl.cnf”
+11. Run “sudo make install”
 
 For steps to test reference the file named TestSteps
 
 Optionally
-8. Run “sudo make uninstall”
+12. Run “sudo make uninstall”
