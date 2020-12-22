@@ -15,8 +15,8 @@ echo ''
 echo 'changepw- unread messages test:'
 echo 'running echo 'Test message' >> outbound/00001'
 echo 'Test message' >> outbound/00001
-echo 'running bin/sendmsg addleness outbound/00001 addleness -p Cardin_pwns2'
-bin/sendmsg addleness outbound/00001 addleness
+echo 'running bin/sendmsg outbound/00001 addleness -p Cardin_pwns2'
+bin/sendmsg outbound/00001 addleness
 echo 'running bin/changepw addleness -op Cardin_pwns2 -np Cardin_pwns3'
 bin/changepw addleness -op Cardin_pwns2 -np Cardin_pwns3
 pause 'Press [Enter] key to continue...'
