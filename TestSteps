@@ -1,0 +1,13 @@
+Start Server for Testing:
+1. From the directory COMS4181_finalproject, CD into system
+2. CD into server
+3. CD into handler
+4. Run “sudo bin/request-handler”
+5. Enter “web_serv_pass” for the password to start the server
+
+Automated Test Cases
+1. With the server running open another ssh connection to the VM
+2. CD to the directory COMS4181_finalproject 
+3. run “make test”
+
+Manual Test Cases
