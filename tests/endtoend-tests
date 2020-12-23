@@ -11,13 +11,18 @@ echo 'Test message for end to end test sent from annalistic to anthropomorpholog
 pause 'Press [Enter] key to continue...'
 echo ''
 
+echo 'running bin/getcert anthropomorphologically -p likelihoods_hoarsely'
+bin/getcert anthropomorphologically -p likelihoods_hoarsely
+pause 'Press [Enter] key to continue...'
+echo ''
+
 echo 'running bin/getcert annalistic -p thickets_pimping'
 bin/getcert annalistic -p thickets_pimping
 pause 'Press [Enter] key to continue...'
 echo ''
 
-echo 'running bin/sendmsg annalistic outbound/00004 anthropomorphologically'
-bin/sendmsg annalistic outbound/00004 anthropomorphologically
+echo 'running bin/sendmsg outbound/00004 anthropomorphologically'
+bin/sendmsg outbound/00004 anthropomorphologically
 pause 'Press [Enter] key to continue...'
 echo ''
 
@@ -26,8 +31,8 @@ bin/getcert anthropomorphologically -p likelihoods_hoarsely
 pause 'Press [Enter] key to continue...'
 echo ''
 
-echo 'running bin/recvmsg anthropomorphologically'
-bin/recvmsg anthropomorphologically
+echo 'running bin/recvmsg'
+bin/recvmsg
 pause 'Press [Enter] key to continue...'
 echo ''
 

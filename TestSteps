@@ -16,13 +16,13 @@ Manual Test Cases
 3. CD into system
 4. CD into client
 5. Run 'bin/getcert addleness'
-6. In the password prompt enter 'pass; rm *'
+6. In the password prompt enter 'pass;rm *'
 7. Confirm an error message is given
 8. Run 'bin/changepw addleness'
-9. In the password prompt enter 'pass; rm *'
+9. In the password prompt enter 'pass;rm *'
 10. In the new password prompts enter the same value
 11. Confirm an error message is given                
 12. Run 'bin/changepw addleness'
 13. In the password prompt enter 'Cardin_pwns2'
-14. In the new password prompts enter 'pass; rm *'
+14. In the new password prompts enter 'pass;rm *'
 15. Confirm an error message is given

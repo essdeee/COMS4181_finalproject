@@ -13,5 +13,10 @@
 
 For steps to test reference the file named TestSteps
 
+Just a friendly reminder: We were a group of only two as two of our groupmates had dropped the 
+course after teams were made, before the project was started. From this we had discussed with
+Bellovin that grading would be more lienent on our submission as the two of us alone would continue
+to implement the full project without any simplifications.
+
 Optionally
 13. Run “sudo make uninstall”
